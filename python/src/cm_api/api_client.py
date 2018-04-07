@@ -72,15 +72,14 @@ class ApiResource(Resource):
     """
     self._version = version
     protocol = use_tls and "https" or "http"
-    if server_port is None:
+    if isinstance(server_port, type(None)):
       server_port = use_tls and 7183 or 7180
-    base_url = "%s://%s:%s/api/v%s" % \
-        (protocol, server_host, server_port, version)
+    base_url = "{}://{}:{}/api/v{}".format(protocol, server_host, server_port, version)
 
     client = HttpClient(base_url, exc_class=ApiException,
                         ssl_context=ssl_context)
     client.set_basic_auth(username, password, API_AUTH_REALM)
-    client.set_headers( { "Content-Type" : "application/json" } )
+    client.set_headers({"Content-Type": "application/json"})
     Resource.__init__(self, client)
 
   @property
@@ -272,7 +271,7 @@ class ApiResource(Resource):
     @return: List of metrics and their readings.
     """
     if not params:
-      params = { }
+      params = {}
     if from_time:
       params['from'] = from_time.isoformat()
     if to_time:
@@ -327,8 +326,7 @@ class ApiResource(Resource):
     """
     return external_accounts.get_supported_types(self, category_name)
 
-  def create_external_account(self, name, display_name, type_name,
-                              account_configs=None):
+  def create_external_account(self, name, display_name, type_name, account_configs=None):
     """
     Create an external account
     @param name: Immutable external account name
@@ -337,8 +335,7 @@ class ApiResource(Resource):
     @param account_configs: Optional account configuration
     @return: An ApiExternalAccount object
     """
-    return external_accounts.create_external_account(
-      self, name, display_name, type_name, account_configs)
+    return external_accounts.create_external_account(self, name, display_name, type_name, account_configs)
 
 
   def get_external_account(self, name, view=None):
@@ -348,8 +345,7 @@ class ApiResource(Resource):
     @param view: View
     @return: An ApiExternalAccount object
     """
-    return external_accounts.get_external_account(
-      self, name, view)
+    return external_accounts.get_external_account(self, name, view)
 
 
   def get_external_account_by_display_name(
@@ -360,8 +356,7 @@ class ApiResource(Resource):
     @param view: View
     @return: An ApiExternalAccount object
     """
-    return external_accounts.get_external_account_by_display_name(
-      self, display_name, view)
+    return external_accounts.get_external_account_by_display_name(self, display_name, view)
 
   def get_all_external_accounts(self, type_name, view=None):
     """
@@ -370,8 +365,7 @@ class ApiResource(Resource):
     @param view: View
     @return: A list of ApiExternalAccount objects.
     """
-    return external_accounts.get_all_external_accounts(
-      self, type_name, view)
+    return external_accounts.get_all_external_accounts(self, type_name, view)
 
   def update_external_account(self, account):
     """
@@ -395,5 +389,4 @@ def get_root_resource(server_host, server_port=None,
   """
   See ApiResource.
   """
-  return ApiResource(server_host, server_port, username, password, use_tls,
-      version)
+  return ApiResource(server_host, server_port, username, password, use_tls, version)

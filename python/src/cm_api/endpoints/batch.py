@@ -29,5 +29,4 @@ def do_batch(resource_root, elements):
   @return: an ApiBatchResponseList
   @since: API v6
   """
-  return call(resource_root.post, BATCH_PATH, ApiBatchResponseList,
-      data=elements, api_version=6)
+  return call(resource_root.post, BATCH_PATH, ApiBatchResponseList, data=elements, api_version=6)

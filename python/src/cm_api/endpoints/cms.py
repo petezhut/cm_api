@@ -49,7 +49,7 @@ class ClouderaManager(BaseApiResource):
     @return: A list of running commands.
     """
     return self._get("commands", ApiCommand, True,
-        params = view and dict(view=view) or None)
+                     params = view and dict(view=view) or None)
 
   def create_mgmt_service(self, service_setup_info):
     """
@@ -219,8 +219,8 @@ class ClouderaManager(BaseApiResource):
       args['roles'] = roles
     if self._get_resource_root().version >= 13:
       args['enableMonitorMetricsCollection'] = collect_metrics
-      if start_datetime is not None:
-          args['startTime'] = start_datetime.isoformat()
+      if not isinstance(start_datetime, type(None)):
+        args['startTime'] = start_datetime.isoformat()
     return self._cmd('collectDiagnosticData', data=args)
 
   def hosts_decommission(self, host_names):
@@ -373,8 +373,7 @@ class ClouderaManager(BaseApiResource):
     @since: API v3
     """
     params = self._get_peer_type_param(peer_type)
-    return self._post("peers/%s/commands/test" % name, ApiCommand, params=params,
-        api_version=3)
+    return self._post("peers/{}/commands/test".format(name), ApiCommand, params=params, api_version=3)
 
   def get_all_hosts_config(self, view=None):
     """
@@ -491,7 +490,7 @@ class ClouderaManager(BaseApiResource):
      host_install_args['cmRepoUrl'] = cm_repo_url
     if gpg_key_custom_url:
      host_install_args['gpgKeyCustomUrl'] = gpg_key_custom_url
-    if java_install_strategy is not None:
+    if not isinstance(java_install_strategy, type(None)):
      host_install_args['javaInstallStrategy'] = java_install_strategy
     if unlimited_jce:
      host_install_args['unlimitedJCE'] = unlimited_jce
@@ -525,4 +524,5 @@ class ClouderaManager(BaseApiResource):
     @return: Command handing cluster import
     @since: API v12
     """
-    return self._post("importClusterTemplate", ApiCommand, False, api_cluster_template, params=dict(addRepositories=add_repositories), api_version=12)
+    return self._post("importClusterTemplate", ApiCommand, False, api_cluster_template,
+                      params=dict(addRepositories=add_repositories), api_version=12)

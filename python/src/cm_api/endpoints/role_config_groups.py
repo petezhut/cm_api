@@ -19,21 +19,19 @@ from cm_api.endpoints.roles import ApiRole
 
 __docformat__ = "epytext"
 
-ROLE_CONFIG_GROUPS_PATH = "/clusters/%s/services/%s/roleConfigGroups"
+ROLE_CONFIG_GROUPS_PATH = "/clusters/{}/services/{}/roleConfigGroups"
 CM_ROLE_CONFIG_GROUPS_PATH = "/cm/service/roleConfigGroups"
 
 def _get_role_config_groups_path(cluster_name, service_name):
   if cluster_name:
     return ROLE_CONFIG_GROUPS_PATH % (cluster_name, service_name)
-  else:
-    return CM_ROLE_CONFIG_GROUPS_PATH
+  return CM_ROLE_CONFIG_GROUPS_PATH
 
 def _get_role_config_group_path(cluster_name, service_name, name):
   path = _get_role_config_groups_path(cluster_name, service_name)
-  return "%s/%s" % (path, name)
+  return "{}/{}".format(path, name)
 
-def create_role_config_groups(resource_root, service_name, apigroup_list,
-    cluster_name="default"):
+def create_role_config_groups(resource_root, service_name, apigroup_list, cluster_name="default"):
   """
   Create role config groups.
   @param resource_root: The root Resource object.
@@ -47,8 +45,7 @@ def create_role_config_groups(resource_root, service_name, apigroup_list,
       _get_role_config_groups_path(cluster_name, service_name),
       ApiRoleConfigGroup, True, data=apigroup_list, api_version=3)
 
-def create_role_config_group(resource_root, service_name, name, display_name,
-    role_type, cluster_name="default"):
+def create_role_config_group(resource_root, service_name, name, display_name, role_type, cluster_name="default"):
   """
   Create a role config group.
   @param resource_root: The root Resource object.
@@ -60,8 +57,7 @@ def create_role_config_group(resource_root, service_name, name, display_name,
   @return: List of created role config groups.
   """
   apigroup = ApiRoleConfigGroup(resource_root, name, display_name, role_type)
-  return create_role_config_groups(resource_root, service_name, [apigroup],
-      cluster_name)[0]
+  return create_role_config_groups(resource_root, service_name, [apigroup], cluster_name)[0]
 
 def get_role_config_group(resource_root, service_name, name,
     cluster_name="default"):
@@ -79,8 +75,7 @@ def get_role_config_group(resource_root, service_name, name,
 def _get_role_config_group(resource_root, path):
   return call(resource_root.get, path, ApiRoleConfigGroup, api_version=3)
 
-def get_all_role_config_groups(resource_root, service_name,
-    cluster_name="default"):
+def get_all_role_config_groups(resource_root, service_name, cluster_name="default"):
   """
   Get all role config groups in the specified service.
   @param resource_root: The root Resource object.
@@ -139,7 +134,7 @@ def move_roles(resource_root, service_name, name, role_names,
   @since: API v3
   """
   return call(resource_root.put,
-      _get_role_config_group_path(cluster_name, service_name, name) + '/roles',
+      "{}/roles".format(_get_role_config_group_path(cluster_name, service_name, name),
       ApiRole, True, data=role_names, api_version=3)
 
 def move_roles_to_base_role_config_group(resource_root, service_name,
@@ -156,7 +151,7 @@ def move_roles_to_base_role_config_group(resource_root, service_name,
   @since: API v3
   """
   return call(resource_root.put,
-      _get_role_config_groups_path(cluster_name, service_name) + '/roles',
+      '{}/roles'.format(_get_role_config_groups_path(cluster_name, service_name)),
       ApiRole, True, data=role_names, api_version=3)
 
 
@@ -176,21 +171,18 @@ class ApiRoleConfigGroup(BaseApiResource):
     'serviceRef'  : ROAttr(ApiServiceRef),
   }
 
-  def __init__(self, resource_root, name=None, displayName=None, roleType=None,
-      config=None):
+  def __init__(self, resource_root, name=None, displayName=None, roleType=None, config=None):
     BaseApiObject.init(self, resource_root, locals())
 
   def __str__(self):
-    return "<ApiRoleConfigGroup>: %s (cluster: %s; service: %s)" % (
+    return "<ApiRoleConfigGroup>: {} (cluster: {}; service: {})".format(
         self.name, self.serviceRef.clusterName, self.serviceRef.serviceName)
 
   def _api_version(self):
     return 3
 
   def _path(self):
-    return _get_role_config_group_path(self.serviceRef.clusterName,
-                          self.serviceRef.serviceName,
-                          self.name)
+    return _get_role_config_group_path(self.serviceRef.clusterName, self.serviceRef.serviceName, self.name)
 
   def get_config(self, view = None):
     """
@@ -202,7 +194,7 @@ class ApiRoleConfigGroup(BaseApiResource):
     @param view: View to materialize ('full' or 'summary').
     @return: Dictionary with configuration data.
     """
-    path = self._path() + '/config'
+    path = '{}/config'.format(self._path())
     resp = self._get_resource_root().get(path,
         params = view and dict(view=view) or None)
     return json_to_config(resp, view == 'full')
@@ -214,7 +206,7 @@ class ApiRoleConfigGroup(BaseApiResource):
     @param config: Dictionary with configuration to update.
     @return: Dictionary with updated configuration.
     """
-    path = self._path() + '/config'
+    path = '{}/config'.format(self._path())
     resp = self._get_resource_root().put(path, data = config_to_json(config))
     return json_to_config(resp)
 

@@ -18,8 +18,8 @@ from cm_api.endpoints.types import *
 
 __docformat__ = "epytext"
 
-PARCELS_PATH = "/clusters/%s/parcels"
-PARCEL_PATH = "/clusters/%s/parcels/products/%s/versions/%s"
+PARCELS_PATH = "/clusters/{}/parcels"
+PARCEL_PATH = "/clusters/{}/parcels/products/{}/versions/{}"
 
 def get_parcel(resource_root, product, version, cluster_name="default"):
   """
@@ -30,7 +30,7 @@ def get_parcel(resource_root, product, version, cluster_name="default"):
   @param cluster_name: Cluster name
   @return: An ApiService object
   """
-  return _get_parcel(resource_root, PARCEL_PATH % (cluster_name, product, version))
+  return _get_parcel(resource_root, PARCEL_PATH.format(cluster_name, product, version))
 
 def _get_parcel(resource_root, path):
   return call(resource_root.get, path, ApiParcel, api_version=3)
@@ -43,7 +43,7 @@ def get_all_parcels(resource_root, cluster_name="default", view=None):
   @return: A list of ApiParcel objects.
   @since: API v3
   """
-  return call(resource_root.get, PARCELS_PATH % (cluster_name,),
+  return call(resource_root.get, PARCELS_PATH.format(cluster_name,),
       ApiParcel, True, params=view and dict(view=view) or None, api_version=3)
 
 class ApiParcelState(BaseApiObject):
@@ -63,8 +63,8 @@ class ApiParcelState(BaseApiObject):
     BaseApiObject.init(self, resource_root)
 
   def __str__(self):
-    return "<ApiParcelState>: (progress: %s) (totalProgress: %s) (count: %s) (totalCount: %s)" % (
-        self.progress, self.totalProgress, self.count, self.totalCount)
+    return "<ApiParcelState>: (progress: {}) (totalProgress: {}) (count: {}) (totalCount: {})".format(
+      self.progress, self.totalProgress, self.count, self.totalCount)
 
 class ApiParcel(BaseApiResource):
   """
@@ -84,8 +84,8 @@ class ApiParcel(BaseApiResource):
     BaseApiObject.init(self, resource_root)
 
   def __str__(self):
-    return "<ApiParcel>: %s-%s (stage: %s) (state: %s) (cluster: %s)" % (
-        self.product, self.version, self.stage, self.state, self._get_cluster_name())
+    return "<ApiParcel>: {}-{} (stage: {}) (state: {}) (cluster: {})".format(
+      self.product, self.version, self.stage, self.state, self._get_cluster_name())
 
   def _api_version(self):
     return 3
@@ -94,7 +94,7 @@ class ApiParcel(BaseApiResource):
     """
     Return the API path for this service.
     """
-    return PARCEL_PATH % (self._get_cluster_name(), self.product, self.version)
+    return PARCEL_PATH.format(self._get_cluster_name(), self.product, self.version)
 
   def _get_cluster_name(self):
     if self.clusterRef:

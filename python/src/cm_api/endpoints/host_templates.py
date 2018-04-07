@@ -19,9 +19,9 @@ from cm_api.endpoints.types import *
 
 __docformat__ = "epytext"
 
-HOST_TEMPLATES_PATH = "/clusters/%s/hostTemplates"
-HOST_TEMPLATE_PATH = "/clusters/%s/hostTemplates/%s"
-APPLY_HOST_TEMPLATE_PATH = HOST_TEMPLATE_PATH + "/commands/applyHostTemplate"
+HOST_TEMPLATES_PATH = "/clusters/{}/hostTemplates"
+HOST_TEMPLATE_PATH = "/clusters/{}/hostTemplates/{}"
+APPLY_HOST_TEMPLATE_PATH = "{}/commands/applyHostTemplate".format(HOST_TEMPLATE_PATH)
 
 def create_host_template(resource_root, name, cluster_name):
   """
@@ -34,7 +34,7 @@ def create_host_template(resource_root, name, cluster_name):
   """
   apitemplate = ApiHostTemplate(resource_root, name, [])
   return call(resource_root.post,
-      HOST_TEMPLATES_PATH % (cluster_name,),
+      HOST_TEMPLATES_PATH.format(cluster_name),
       ApiHostTemplate, True, data=[apitemplate], api_version=3)[0]
 
 def get_host_template(resource_root, name, cluster_name):
@@ -47,7 +47,7 @@ def get_host_template(resource_root, name, cluster_name):
   @since: API v3
   """
   return call(resource_root.get,
-      HOST_TEMPLATE_PATH % (cluster_name, name),
+      HOST_TEMPLATE_PATH.format(cluster_name, name),
       ApiHostTemplate, api_version=3)
 
 def get_all_host_templates(resource_root, cluster_name="default"):
@@ -58,7 +58,7 @@ def get_all_host_templates(resource_root, cluster_name="default"):
   @since: API v3
   """
   return call(resource_root.get,
-      HOST_TEMPLATES_PATH % (cluster_name,),
+      HOST_TEMPLATES_PATH.format(cluster_name),
       ApiHostTemplate, True, api_version=3)
 
 def delete_host_template(resource_root, name, cluster_name):
@@ -71,7 +71,7 @@ def delete_host_template(resource_root, name, cluster_name):
   @since: API v3
   """
   return call(resource_root.delete,
-      HOST_TEMPLATE_PATH % (cluster_name, name),
+      HOST_TEMPLATE_PATH.format(cluster_name, name),
       ApiHostTemplate, api_version=3)
 
 def update_host_template(resource_root, name, cluster_name, api_host_template):
@@ -85,7 +85,7 @@ def update_host_template(resource_root, name, cluster_name, api_host_template):
   @since: API v3
   """
   return call(resource_root.put,
-      HOST_TEMPLATE_PATH % (cluster_name, name),
+      HOST_TEMPLATE_PATH.format(cluster_name, name),
       ApiHostTemplate, data=api_host_template, api_version=3)
 
 def apply_host_template(resource_root, name, cluster_name, host_ids, start_roles):
@@ -106,7 +106,7 @@ def apply_host_template(resource_root, name, cluster_name, host_ids, start_roles
 
   params = {"startRoles" : start_roles}
   return call(resource_root.post,
-      APPLY_HOST_TEMPLATE_PATH % (cluster_name, name),
+      APPLY_HOST_TEMPLATE_PATH.format(cluster_name, name),
       ApiCommand, data=host_refs, params=params, api_version=3)
 
 
@@ -121,13 +121,13 @@ class ApiHostTemplate(BaseApiResource):
     BaseApiObject.init(self, resource_root, locals())
 
   def __str__(self):
-    return "<ApiHostTemplate>: %s (cluster %s)" % (self.name, self.clusterRef.clusterName)
+    return "<ApiHostTemplate>: {} (cluster {})".format(self.name, self.clusterRef.clusterName)
 
   def _api_version(self):
     return 3
 
   def _path(self):
-    return HOST_TEMPLATE_PATH % (self.clusterRef.clusterName, self.name)
+    return HOST_TEMPLATE_PATH.format(self.clusterRef.clusterName, self.name)
 
   def _do_update(self, update):
     self._update(self._put('', ApiHostTemplate, data=update))

@@ -37,15 +37,13 @@ def create_cluster(resource_root, name, version=None, fullVersion=None):
   """
   if version is None and fullVersion is None:
     raise Exception("Either 'version' or 'fullVersion' must be specified")
-  if fullVersion is not None:
+  api_version = 1
+  if not isinstance(fullVersion, type(None)):
     api_version = 6
     version = None
-  else:
-    api_version = 1
 
   apicluster = ApiCluster(resource_root, name, version, fullVersion)
-  return call(resource_root.post, CLUSTERS_PATH, ApiCluster, True,
-              data=[apicluster], api_version=api_version)[0]
+  return call(resource_root.post, CLUSTERS_PATH, ApiCluster, True, data=[apicluster], api_version=api_version)[0]
 
 def get_cluster(resource_root, name):
   """
@@ -54,7 +52,7 @@ def get_cluster(resource_root, name):
   @param name: Cluster name
   @return: An ApiCluster object
   """
-  return call(resource_root.get, "%s/%s" % (CLUSTERS_PATH, name), ApiCluster)
+  return call(resource_root.get, "{}/{}".format(CLUSTERS_PATH, name), ApiCluster)
 
 def get_all_clusters(resource_root, view=None):
   """
@@ -62,8 +60,7 @@ def get_all_clusters(resource_root, view=None):
   @param resource_root: The root Resource object.
   @return: A list of ApiCluster objects.
   """
-  return call(resource_root.get, CLUSTERS_PATH, ApiCluster, True,
-      params=view and dict(view=view) or None)
+  return call(resource_root.get, CLUSTERS_PATH, ApiCluster, True, params=view and dict(view=view) or None)
 
 def delete_cluster(resource_root, name):
   """
@@ -72,7 +69,7 @@ def delete_cluster(resource_root, name):
   @param name: Cluster name
   @return: The deleted ApiCluster object
   """
-  return call(resource_root.delete, "%s/%s" % (CLUSTERS_PATH, name), ApiCluster)
+  return call(resource_root.delete, "{}/{}".format(CLUSTERS_PATH, name), ApiCluster)
 
 class ApiCluster(BaseApiResource):
   _ATTRIBUTES = {
@@ -95,7 +92,7 @@ class ApiCluster(BaseApiResource):
     return "<ApiCluster>: %s; version: %s" % (self.name, self.version)
 
   def _path(self):
-    return "%s/%s" % (CLUSTERS_PATH, self.name)
+    return "{}/{}".format(CLUSTERS_PATH, self.name)
 
   def _put_cluster(self, dic, params=None):
     """Change cluster attributes"""
@@ -119,8 +116,7 @@ class ApiCluster(BaseApiResource):
     @param view: View to materialize ('full' or 'summary')
     @return: A list of running commands.
     """
-    return self._get("commands", ApiCommand, True,
-        params = view and dict(view=view) or None)
+    return self._get("commands", ApiCommand, True, params=view and dict(view=view) or None)
 
   def rename(self, newname):
     """
@@ -241,8 +237,7 @@ class ApiCluster(BaseApiResource):
     @since: API v3
     """
     hostRefList = [ApiHostRef(self._get_resource_root(), x) for x in hostIds]
-    return self._post("hosts", ApiHostRef, True, data=hostRefList,
-        api_version=3)
+    return self._post("hosts", ApiHostRef, True, data=hostRefList, api_version=3)
 
   def start(self):
     """
@@ -260,9 +255,7 @@ class ApiCluster(BaseApiResource):
     """
     return self._cmd('stop')
 
-  def restart(self, restart_only_stale_services=None,
-    redeploy_client_configuration=None,
-    restart_service_names=None):
+  def restart(self, restart_only_stale_services=None, redeploy_client_configuration=None, restart_service_names=None):
     """
     Restart all services in the cluster.
     Services are restarted in the appropriate order given their dependencies.
@@ -309,8 +302,7 @@ class ApiCluster(BaseApiResource):
     @return: Reference to the submitted command.
     @since: API v7
     """
-    return self._cmd('deployClusterClientConfig', data=hostIds,
-      api_version=7)
+    return self._cmd('deployClusterClientConfig', data=hostIds, api_version=7)
 
   def upgrade_services(self):
     """
@@ -583,8 +575,7 @@ class ApiCluster(BaseApiResource):
         }
     return self._cmd('upgradeCdh', data=args, api_version=6)
 
-  def configure_for_kerberos(self, datanode_transceiver_port=None,
-    datanode_web_port=None):
+  def configure_for_kerberos(self, datanode_transceiver_port=None, datanode_web_port=None):
     """
     Command to configure the cluster to use Kerberos for authentication.
 
@@ -638,7 +629,5 @@ class ApiCluster(BaseApiResource):
     @return: List of available distributed file system services in the cluster.
     @since: API v12
     """
-    if view:
-      return self._get_resource_root().get("%s/%s?view=%s" % (self._path(), 'dfsServices', view))
-    else:
-      return self._get_resource_root().get("%s/%s" % (self._path(), 'dfsServices'))
+    return self._get_resource_root().get("{}/{}{}".format(self._path(), 'dfsServices',
+                                                          "?view={}".format(view) if view else ""))

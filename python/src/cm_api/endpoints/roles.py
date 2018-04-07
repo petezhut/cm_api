@@ -18,25 +18,19 @@ from cm_api.endpoints.types import *
 
 __docformat__ = "epytext"
 
-ROLES_PATH = "/clusters/%s/services/%s/roles"
+ROLES_PATH = "/clusters/{}/services/{}/roles"
 CM_ROLES_PATH = "/cm/service/roles"
 
 def _get_roles_path(cluster_name, service_name):
   if cluster_name:
     return ROLES_PATH % (cluster_name, service_name)
-  else:
-    return CM_ROLES_PATH
+  return CM_ROLES_PATH
 
 def _get_role_path(cluster_name, service_name, role_name):
   path = _get_roles_path(cluster_name, service_name)
-  return "%s/%s" % (path, role_name)
+  return "{}/{}".format(path, role_name)
 
-def create_role(resource_root,
-                service_name,
-                role_type,
-                role_name,
-                host_id,
-                cluster_name="default"):
+def create_role(resource_root, service_name, role_type, role_name, host_id, cluster_name="default"):
   """
   Create a role
   @param resource_root: The root Resource object.
@@ -46,11 +40,8 @@ def create_role(resource_root,
   @param cluster_name: Cluster name
   @return: An ApiRole object
   """
-  apirole = ApiRole(resource_root, role_name, role_type,
-                    ApiHostRef(resource_root, host_id))
-  return call(resource_root.post,
-      _get_roles_path(cluster_name, service_name),
-      ApiRole, True, data=[apirole])[0]
+  apirole = ApiRole(resource_root, role_name, role_type, ApiHostRef(resource_root, host_id))
+  return call(resource_root.post, _get_roles_path(cluster_name, service_name), ApiRole, True, data=[apirole])[0]
 
 def get_role(resource_root, service_name, name, cluster_name="default"):
   """
@@ -74,12 +65,10 @@ def get_all_roles(resource_root, service_name, cluster_name="default", view=None
   @param cluster_name: Cluster name
   @return: A list of ApiRole objects.
   """
-  return call(resource_root.get,
-      _get_roles_path(cluster_name, service_name),
-      ApiRole, True, params=view and dict(view=view) or None)
+  return call(resource_root.get, _get_roles_path(cluster_name, service_name),
+              ApiRole, True, params=view and dict(view=view) or None)
 
-def get_roles_by_type(resource_root, service_name, role_type,
-                      cluster_name="default", view=None):
+def get_roles_by_type(resource_root, service_name, role_type, cluster_name="default", view=None):
   """
   Get all roles of a certain type in a service
   @param resource_root: The root Resource object.
@@ -89,7 +78,7 @@ def get_roles_by_type(resource_root, service_name, role_type,
   @return: A list of ApiRole objects.
   """
   roles = get_all_roles(resource_root, service_name, cluster_name, view)
-  return [ r for r in roles if r.type == role_type ]
+  return [r for r in roles if r.type == role_type]
 
 def delete_role(resource_root, service_name, name, cluster_name="default"):
   """
@@ -100,8 +89,7 @@ def delete_role(resource_root, service_name, name, cluster_name="default"):
   @param cluster_name: Cluster name
   @return: The deleted ApiRole object
   """
-  return call(resource_root.delete,
-      _get_role_path(cluster_name, service_name, name), ApiRole)
+  return call(resource_root.delete, _get_role_path(cluster_name, service_name, name), ApiRole)
 
 
 class ApiRole(BaseApiResource):
@@ -129,16 +117,14 @@ class ApiRole(BaseApiResource):
     BaseApiObject.init(self, resource_root, locals())
 
   def __str__(self):
-    return "<ApiRole>: %s (cluster: %s; service: %s)" % (
-        self.name, self.serviceRef.clusterName, self.serviceRef.serviceName)
+    return "<ApiRole>: {} (cluster: {}; service: {})".format(
+      self.name, self.serviceRef.clusterName, self.serviceRef.serviceName)
 
   def _path(self):
-    return _get_role_path(self.serviceRef.clusterName,
-                          self.serviceRef.serviceName,
-                          self.name)
+    return _get_role_path(self.serviceRef.clusterName, self.serviceRef.serviceName, self.name)
 
   def _get_log(self, log):
-    path = "%s/logs/%s" % (self._path(), log)
+    path = "{}/logs/{}".format(self._path(), log)
     return self._get_resource_root().get(path)
 
   def get_commands(self, view=None):
@@ -148,8 +134,7 @@ class ApiRole(BaseApiResource):
     @param view: View to materialize ('full' or 'summary')
     @return: A list of running commands.
     """
-    return self._get("commands", ApiCommand, True,
-        params = view and dict(view=view) or None)
+    return self._get("commands", ApiCommand, True, params = view and dict(view=view) or None)
 
   def get_config(self, view = None):
     """
@@ -234,8 +219,7 @@ class ApiRole(BaseApiResource):
     @param view: View to materialize ('full' or 'summary')
     @return: List of metrics and their readings.
     """
-    return self._get_resource_root().get_metrics(self._path() + '/metrics',
-        from_time, to_time, metrics, view)
+    return self._get_resource_root().get_metrics('{}/metrics'.format(self._path()), from_time, to_time, metrics, view)
 
   def enter_maintenance_mode(self):
     """
@@ -270,5 +254,3 @@ class ApiRole(BaseApiResource):
     @since: API v6
     """
     return self._get("commandsByName", ApiCommandMetadata, True, api_version=6)
-
-

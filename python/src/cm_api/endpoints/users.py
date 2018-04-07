@@ -26,8 +26,7 @@ def get_all_users(resource_root, view=None):
   @param view: View to materialize ('full' or 'summary').
   @return: A list of ApiUser objects.
   """
-  return call(resource_root.get, USERS_PATH, ApiUser, True,
-      params=view and dict(view=view) or None)
+  return call(resource_root.get, USERS_PATH, ApiUser, True, params=view and dict(view=view) or None)
 
 def get_user(resource_root, username):
   """
@@ -37,8 +36,7 @@ def get_user(resource_root, username):
   @param username: Username to look up
   @return: An ApiUser object
   """
-  return call(resource_root.get,
-      '%s/%s' % (USERS_PATH, username), ApiUser)
+  return call(resource_root.get, '{}/{}'.format(USERS_PATH, username), ApiUser)
 
 def create_user(resource_root, username, password, roles):
   """
@@ -53,8 +51,7 @@ def create_user(resource_root, username, password, roles):
   @return: An ApiUser object
   """
   apiuser = ApiUser(resource_root, username, password=password, roles=roles)
-  return call(resource_root.post, USERS_PATH, ApiUser, True,
-      data=[apiuser])[0]
+  return call(resource_root.post, USERS_PATH, ApiUser, True, data=[apiuser])[0]
 
 def delete_user(resource_root, username):
   """
@@ -64,8 +61,7 @@ def delete_user(resource_root, username):
   @param username: Username
   @return: An ApiUser object
   """
-  return call(resource_root.delete,
-      '%s/%s' % (USERS_PATH, username), ApiUser)
+  return call(resource_root.delete, '{}/{}'.format(USERS_PATH, username), ApiUser)
 
 def update_user(resource_root, user):
   """
@@ -77,8 +73,7 @@ def update_user(resource_root, user):
   @param user: An ApiUser object
   @return: An ApiUser object
   """
-  return call(resource_root.put,
-      '%s/%s' % (USERS_PATH, user.name), ApiUser, data=user)
+  return call(resource_root.put, '{}/{}'.format(USERS_PATH, user.name), ApiUser, data=user)
 
 class ApiUser(BaseApiResource):
   _ATTRIBUTES = {
@@ -91,7 +86,7 @@ class ApiUser(BaseApiResource):
     BaseApiObject.init(self, resource_root, locals())
 
   def _path(self):
-    return '%s/%s' % (USERS_PATH, self.name)
+    return '{}/{}'.format(USERS_PATH, self.name)
 
   def grant_admin_role(self):
     """

@@ -57,7 +57,7 @@ class RestException(Exception):
   def __str__(self):
     res = self._message or ""
     if self._code is not None:
-      res += " (error %s)" % (self._code,)
+        res = "{} (error {})".format(res, self._code)
     return res
 
   def get_parent_ex(self):
@@ -100,7 +100,7 @@ class HttpClient(object):
 
     # Python 2.6's HTTPSHandler does not support the context argument, so only
     # instantiate it if non-None context is given
-    if (ssl_context is not None):
+    if not isinstance(ssl_context, type(None)):
       self._opener = urllib2.build_opener(
           urllib2.HTTPSHandler(context=ssl_context),
           HTTPErrorProcessor(),
@@ -161,9 +161,8 @@ class HttpClient(object):
     # Prepare URL and params
     url = self._make_url(path, params)
     if http_method in ("GET", "DELETE"):
-      if data is not None:
-        self.logger.warn(
-            "GET method does not pass any data. Path '%s'" % (path,))
+        if not isinstance(data, type(None)):
+            self.logger.warning("GET method does not pass any data. Path '{}'".format(path, ))
         data = None
 
     # Setup the request
@@ -176,19 +175,19 @@ class HttpClient(object):
       request.add_header(k, v)
 
     # Call it
-    self.logger.debug("%s %s" % (http_method, url))
+    self.logger.debug("{} {}".format(http_method, url))
     try:
       return self._opener.open(request)
-    except urllib2.HTTPError, ex:
+    except urllib2.HTTPError as ex:
       raise self._exc_class(ex)
 
   def _make_url(self, path, params):
     res = self._base_url
     if path:
-      res += posixpath.normpath('/' + path.lstrip('/'))
+        res = "{}{}".format(res, posixpath.normpath('/' + path.lstrip('/')))
     if params:
       param_str = urllib.urlencode(params, True)
-      res += '?' + param_str
+      res = "{}?{}".format(res, param_str)
     return iri_to_uri(res)
 
 
@@ -230,7 +229,7 @@ def iri_to_uri(iri):
     # The % character is also added to the list of safe characters here, as the
     # end of section 3.1 of RFC 3987 specifically mentions that % must not be
     # converted.
-    if iri is None:
+    if isinstance(iri, type(None)):
         return iri
     return urllib.quote(smart_str(iri), safe="/#%[]=:;$&()+,!?*@'~")
 
@@ -243,7 +242,7 @@ def smart_str(s, encoding='utf-8', strings_only=False, errors='strict'):
 
     If strings_only is True, don't convert (some) non-string-like objects.
     """
-    if strings_only and isinstance(s, (types.NoneType, int)):
+    if strings_only and isinstance(s, (type(None), int)):
         return s
     elif not isinstance(s, basestring):
         try:
@@ -253,13 +252,10 @@ def smart_str(s, encoding='utf-8', strings_only=False, errors='strict'):
                 # An Exception subclass containing non-ASCII data that doesn't
                 # know how to print itself properly. We shouldn't raise a
                 # further exception.
-                return ' '.join([smart_str(arg, encoding, strings_only,
-                        errors) for arg in s])
+                return ' '.join([smart_str(arg, encoding, strings_only, errors) for arg in s])
             return unicode(s).encode(encoding, errors)
     elif isinstance(s, unicode):
         return s.encode(encoding, errors)
     elif s and encoding != 'utf-8':
         return s.decode('utf-8', errors).encode(encoding, errors)
-    else:
-        return s
-
+    return s

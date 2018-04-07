@@ -56,7 +56,7 @@ class Resource(object):
     return self._client.base_url
 
   def _join_uri(self, relpath):
-    if relpath is None:
+    if isinstance(relpath, type(None)):
       return self._path
     return self._path + posixpath.normpath('/' + relpath)
 
@@ -73,27 +73,22 @@ class Resource(object):
                                 headers=headers)
     try:
       body = resp.read()
-    except Exception, ex:
-      raise Exception("Command '%s %s' failed: %s" %
-                      (method, path, ex))
+    except Exception as ex:
+      raise Exception("Command '{} {}' failed: {}".format(method, path, ex))
 
-    self._client.logger.debug(
-        "%s Got response: %s%s" %
-        (method, body[:32], len(body) > 32 and "..." or ""))
+    self._client.logger.debug("{} Got response: {}{}".format(method, body[:32], len(body) > 32 and "..." or ""))
 
     # Is the response application/json?
-    if len(body) != 0 and \
-          resp.info().getmaintype() == "application" and \
-          resp.info().getsubtype() == "json":
+    if all([len(body != 0),
+            resp.info().getmaintype() == "application",
+            resp.info().getsubtype() == "json"]):
       try:
         json_dict = json.loads(body)
         return json_dict
-      except Exception, ex:
-        self._client.logger.exception('JSON decode error: %s' % (body,))
+      except Exception as ex:
+        self._client.logger.exception('JSON decode error: {}'.format(body))
         raise ex
-    else:
-      return body
-
+    return body
 
   def get(self, relpath=None, params=None):
     """
@@ -103,25 +98,23 @@ class Resource(object):
 
     @return: A dictionary of the JSON result.
     """
-    for retry in xrange(self.retries + 1):
+    for retry in range(self.retries + 1):
       if retry:
         time.sleep(self.retry_sleep)
       try:
         return self.invoke("GET", relpath, params)
       except (socket.error, urllib2.URLError) as e:
         if "timed out" in str(e).lower():
-          log_message = "Timeout issuing GET request for %s." \
-              % (self._join_uri(relpath), )
+          log_message = "Timeout issuing GET request for {}.".format(self._join_uri(relpath))
           if retry < self.retries:
-            log_message += " Will retry."
+            log_message = "{} Will retry".format(log_message)
           else:
-            log_message += " No retries left."
-          LOG.warn(log_message, exc_info=True)
+            log_message = "{} No retries left.".format(log_message)
+          LOG.warning(log_message, exc_info=True)
         else:
           raise
     else:
       raise e
-
 
   def delete(self, relpath=None, params=None):
     """
@@ -133,7 +126,6 @@ class Resource(object):
     """
     return self.invoke("DELETE", relpath, params)
 
-
   def post(self, relpath=None, params=None, data=None, contenttype=None):
     """
     Invoke the POST method on a resource.
@@ -144,9 +136,7 @@ class Resource(object):
 
     @return: A dictionary of the JSON result.
     """
-    return self.invoke("POST", relpath, params, data,
-                       self._make_headers(contenttype))
-
+    return self.invoke("POST", relpath, params, data, self._make_headers(contenttype))
 
   def put(self, relpath=None, params=None, data=None, contenttype=None):
     """
@@ -158,11 +148,10 @@ class Resource(object):
 
     @return: A dictionary of the JSON result.
     """
-    return self.invoke("PUT", relpath, params, data,
-                       self._make_headers(contenttype))
+    return self.invoke("PUT", relpath, params, data, self._make_headers(contenttype))
 
-
-  def _make_headers(self, contenttype=None):
+  @staticmethod
+  def _make_headers(contenttype=None):
     if contenttype:
-      return { 'Content-Type': contenttype }
+      return {'Content-Type': contenttype}
     return None

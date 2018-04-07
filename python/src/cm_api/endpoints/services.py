@@ -24,8 +24,8 @@ from cm_api.endpoints import roles, role_config_groups
 
 __docformat__ = "epytext"
 
-SERVICES_PATH = "/clusters/%s/services"
-SERVICE_PATH = "/clusters/%s/services/%s"
+SERVICES_PATH = "/clusters/{}/services"
+SERVICE_PATH = "/clusters/{}/services/{}"
 ROLETYPES_CFG_KEY = 'roleTypeConfigs'
 
 def create_service(resource_root, name, service_type,
@@ -40,7 +40,7 @@ def create_service(resource_root, name, service_type,
   """
   apiservice = ApiService(resource_root, name, service_type)
   return call(resource_root.post,
-      SERVICES_PATH % (cluster_name,),
+      SERVICES_PATH.format(cluster_name,),
       ApiService, True, data=[apiservice])[0]
 
 def get_service(resource_root, name, cluster_name="default"):
@@ -51,7 +51,7 @@ def get_service(resource_root, name, cluster_name="default"):
   @param cluster_name: Cluster name
   @return: An ApiService object
   """
-  return _get_service(resource_root, "%s/%s" % (SERVICES_PATH % (cluster_name,), name))
+  return _get_service(resource_root, "{}/{}".format(SERVICES_PATH.format(cluster_name,), name))
 
 def _get_service(resource_root, path):
   return call(resource_root.get, path, ApiService)
@@ -64,7 +64,7 @@ def get_all_services(resource_root, cluster_name="default", view=None):
   @return: A list of ApiService objects.
   """
   return call(resource_root.get,
-      SERVICES_PATH % (cluster_name,),
+      SERVICES_PATH.format(cluster_name),
       ApiService, True, params=view and dict(view=view) or None)
 
 def delete_service(resource_root, name, cluster_name="default"):
@@ -76,7 +76,7 @@ def delete_service(resource_root, name, cluster_name="default"):
   @return: The deleted ApiService object
   """
   return call(resource_root.delete,
-      "%s/%s" % (SERVICES_PATH % (cluster_name,), name),
+      "{}/{}".format(SERVICES_PATH.format(cluster_name), name),
       ApiService)
 
 
@@ -103,8 +103,7 @@ class ApiService(BaseApiResource):
     BaseApiObject.init(self, resource_root, locals())
 
   def __str__(self):
-    return "<ApiService>: %s (cluster: %s)" % (
-        self.name, self._get_cluster_name())
+    return "<ApiService>: {} (cluster: {})".format(self.name, self._get_cluster_name())
 
   def _get_cluster_name(self):
     if hasattr(self, 'clusterRef') and self.clusterRef:
@@ -119,9 +118,8 @@ class ApiService(BaseApiResource):
     object refers to the Cloudera Management Services instance.
     """
     if self._get_cluster_name():
-      return SERVICE_PATH % (self._get_cluster_name(), self.name)
-    else:
-      return '/cm/service'
+      return SERVICE_PATH.format(self._get_cluster_name(), self.name)
+    return '/cm/service'
 
   def _role_cmd(self, cmd, roles, api_version=1):
     return self._post("roleCommands/" + cmd, ApiBulkCommandList,
@@ -192,7 +190,7 @@ class ApiService(BaseApiResource):
     @return: The removed directory, or null if failed
     @since: API v14
     """
-    return self._delete("watcheddir/%s" % dir_path, ApiWatchedDir, api_version=14)
+    return self._delete("watcheddir/{}".format(dir_path), ApiWatchedDir, api_version=14)
 
   def get_impala_queries(self, start_time, end_time, filter_str="", limit=100,
      offset=0):
@@ -233,8 +231,7 @@ class ApiService(BaseApiResource):
     @return: The warning message, if any.
     @since: API v4
     """
-    return self._post("impalaQueries/%s/cancel" % query_id,
-        ApiImpalaCancelResponse, api_version=4)
+    return self._post("impalaQueries/{}/cancel".format(query_id), ApiImpalaCancelResponse, api_version=4)
 
   def get_query_details(self, query_id, format='text'):
     """
@@ -456,8 +453,7 @@ class ApiService(BaseApiResource):
     @return: The warning message, if any.
     @since: API v6
     """
-    return self._post("yarnApplications/%s/kill" % (application_id, ),
-        ApiYarnKillResponse, api_version=6)
+    return self._post("yarnApplications/{}/kill".format(application_id), ApiYarnKillResponse, api_version=6)
 
   def get_yarn_application_attributes(self):
     """
@@ -560,10 +556,9 @@ class ApiService(BaseApiResource):
     """
     path = self._path() + '/config'
 
+    data = { }
     if svc_config:
       data = config_to_api_list(svc_config)
-    else:
-      data = { }
     if rt_configs:
       rt_list = [ ]
       for rt, cfg in rt_configs.iteritems():
@@ -909,16 +904,14 @@ class ApiService(BaseApiResource):
     )
 
     version = self._get_resource_root().version
-    if version < 2:
-      if disable_quorum_storage:
-        raise AttributeError("Quorum-based Storage requires at least API version 2 available in Cloudera Manager 4.1.")
+    if version < 2 and disable_quorum_storage:
+      raise AttributeError("Quorum-based Storage requires at least API version 2 available in Cloudera Manager 4.1.")
     else:
       args['disableQuorumStorage'] = disable_quorum_storage
 
     return self._cmd('hdfsDisableHa', data=args)
 
-  def enable_hdfs_auto_failover(self, nameservice, active_fc_name,
-      standby_fc_name, zk_service):
+  def enable_hdfs_auto_failover(self, nameservice, active_fc_name, standby_fc_name, zk_service):
     """
     Enable auto-failover for an HDFS nameservice.
     This command is no longer supported with API v6 onwards. Use enable_nn_ha instead.
@@ -1315,8 +1308,7 @@ class ApiService(BaseApiResource):
     """
     if servers:
       return self._role_cmd('zooKeeperCleanup', servers)
-    else:
-      return self._cmd('zooKeeperCleanup')
+    return self._cmd('zooKeeperCleanup')
 
   def init_zookeeper(self, *servers):
     """
@@ -1331,8 +1323,7 @@ class ApiService(BaseApiResource):
     """
     if servers:
       return self._role_cmd('zooKeeperInit', servers)
-    else:
-      return self._cmd('zooKeeperInit')
+    return self._cmd('zooKeeperInit')
 
   def sync_hue_db(self, *servers):
     """
@@ -1523,16 +1514,15 @@ class ApiService(BaseApiResource):
       elif isinstance(arguments, ApiHdfsReplicationArguments):
         schedule.hdfsArguments = arguments
       else:
-        raise TypeError, 'Unexpected type for HDFS replication argument.'
+        raise TypeError('Unexpected type for HDFS replication argument.')
     elif self.type == 'HIVE':
       if not isinstance(arguments, ApiHiveReplicationArguments):
-        raise TypeError, 'Unexpected type for Hive replication argument.'
+        raise TypeError('Unexpected type for Hive replication argument.')
       schedule.hiveArguments = arguments
     else:
-      raise TypeError, 'Replication is not supported for service type ' + self.type
+      raise TypeError('Replication is not supported for service type {}'.format(self.type))
 
-    return self._post("replications", ApiReplicationSchedule, True, [schedule],
-        api_version=3)[0]
+    return self._post("replications", ApiReplicationSchedule, True, [schedule], api_version=3)[0]
 
   def get_replication_schedules(self):
     """
@@ -1541,8 +1531,7 @@ class ApiService(BaseApiResource):
     @return: A list of replication schedules.
     @since: API v3
     """
-    return self._get("replications", ApiReplicationSchedule, True,
-        api_version=3)
+    return self._get("replications", ApiReplicationSchedule, True, api_version=3)
 
   def get_replication_schedule(self, schedule_id):
     """
@@ -1552,8 +1541,7 @@ class ApiService(BaseApiResource):
     @return: The requested schedule.
     @since: API v3
     """
-    return self._get("replications/%d" % schedule_id, ApiReplicationSchedule,
-        api_version=3)
+    return self._get("replications/{}".format(schedule_id), ApiReplicationSchedule, api_version=3)
 
   def delete_replication_schedule(self, schedule_id):
     """
@@ -1563,8 +1551,7 @@ class ApiService(BaseApiResource):
     @return: The deleted replication schedule.
     @since: API v3
     """
-    return self._delete("replications/%s" % schedule_id, ApiReplicationSchedule,
-        api_version=3)
+    return self._delete("replications/{}".format(schedule_id), ApiReplicationSchedule, api_version=3)
 
   def update_replication_schedule(self, schedule_id, schedule):
     """
@@ -1575,8 +1562,7 @@ class ApiService(BaseApiResource):
     @return: The updated replication schedule.
     @since: API v3
     """
-    return self._put("replications/%s" % schedule_id, ApiReplicationSchedule,
-        data=schedule, api_version=3)
+    return self._put("replications/{}".format(schedule_id), ApiReplicationSchedule, data=schedule, api_version=3)
 
   def get_replication_command_history(self, schedule_id, limit=20, offset=0,
                                       view=None):
@@ -1597,7 +1583,7 @@ class ApiService(BaseApiResource):
     if view:
       params['view'] = view
 
-    return self._get("replications/%s/history" % schedule_id,
+    return self._get("replications/{}/history".format(schedule_id),
                      ApiReplicationCommand, True, params=params, api_version=4)
 
   def trigger_replication_schedule(self, schedule_id, dry_run=False):
@@ -1610,8 +1596,7 @@ class ApiService(BaseApiResource):
     @return: The command corresponding to the replication job.
     @since: API v3
     """
-    return self._post("replications/%s/run" % schedule_id, ApiCommand,
-        params=dict(dryRun=dry_run),
+    return self._post("replications/{}/run".format(schedule_id), ApiCommand, params=dict(dryRun=dry_run),
         api_version=3)
 
   def create_snapshot_policy(self, policy):
@@ -1621,8 +1606,7 @@ class ApiService(BaseApiResource):
     @return: The newly created policy.
     @since: API v6
     """
-    return self._post("snapshots/policies", ApiSnapshotPolicy, True, [policy],
-        api_version=6)[0]
+    return self._post("snapshots/policies", ApiSnapshotPolicy, True, [policy], api_version=6)[0]
 
   def get_snapshot_policies(self, view=None):
     """
@@ -1633,7 +1617,7 @@ class ApiService(BaseApiResource):
     @since: API v6
     """
     return self._get("snapshots/policies", ApiSnapshotPolicy, True,
-        params=view and dict(view=view) or None, api_version=6)
+                     params=view and dict(view=view) or None, api_version=6)
 
   def get_snapshot_policy(self, name, view=None):
     """
@@ -1644,8 +1628,8 @@ class ApiService(BaseApiResource):
     @return: The requested snapshot policy.
     @since: API v6
     """
-    return self._get("snapshots/policies/%s" % name, ApiSnapshotPolicy,
-        params=view and dict(view=view) or None, api_version=6)
+    return self._get("snapshots/policies/{}".format(name), ApiSnapshotPolicy,
+                     params=view and dict(view=view) or None, api_version=6)
 
   def delete_snapshot_policy(self, name):
     """
@@ -1655,7 +1639,7 @@ class ApiService(BaseApiResource):
     @return: The deleted snapshot policy.
     @since: API v6
     """
-    return self._delete("snapshots/policies/%s" % name, ApiSnapshotPolicy, api_version=6)
+    return self._delete("snapshots/policies/{}".format(name), ApiSnapshotPolicy, api_version=6)
 
   def update_snapshot_policy(self, name, policy):
     """
@@ -1666,8 +1650,7 @@ class ApiService(BaseApiResource):
     @return: The updated snapshot policy.
     @since: API v6
     """
-    return self._put("snapshots/policies/%s" % name, ApiSnapshotPolicy, data=policy,
-        api_version=6)
+    return self._put("snapshots/policies/{}".format(name), ApiSnapshotPolicy, data=policy, api_version=6)
 
   def get_snapshot_command_history(self, name, limit=20, offset=0, view=None):
     """
@@ -1687,8 +1670,8 @@ class ApiService(BaseApiResource):
     if view:
       params['view'] = view
 
-    return self._get("snapshots/policies/%s/history" % name, ApiSnapshotCommand, True,
-        params=params, api_version=6)
+    return self._get("snapshots/policies/{}/history".format(name),
+                     ApiSnapshotCommand, True, params=params, api_version=6)
 
 
   def install_oozie_sharelib(self):

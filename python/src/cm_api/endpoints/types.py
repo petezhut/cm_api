@@ -55,13 +55,11 @@ class Attr(object):
       return config_to_api_list(value)
     elif isinstance(value, datetime.datetime):
       return value.strftime(self.DATE_FMT)
-    elif isinstance(value, list) or isinstance(value, tuple):
+    elif isinstance(value, (list tuple)):
       if self._is_api_list:
         return ApiList(value).to_json_dict()
-      else:
-        return [ self.to_json(x, preserve_ro) for x in value ]
-    else:
-      return value
+      return [self.to_json(x, preserve_ro) for x in value]
+    return value
 
   def from_json(self, resource_root, data):
     """
@@ -76,7 +74,7 @@ class Attr(object):
        is a python list.
      - the raw value otherwise
     """
-    if data is None:
+    if isinstnace(data, type(None)):
       return None
 
     if self._atype == datetime.datetime:
@@ -86,7 +84,7 @@ class Attr(object):
       # but an ApiList for full views. Try to detect each case from the JSON
       # data.
       if not data['items']:
-        return { }
+        return {}
       first = data['items'][0]
       return json_to_config(data, len(first) == 2)
     elif self._is_api_list:
@@ -95,8 +93,7 @@ class Attr(object):
       return [ self.from_json(resource_root, x) for x in data ]
     elif hasattr(self._atype, 'from_json_dict'):
       return self._atype.from_json_dict(data, resource_root)
-    else:
-      return data
+    return data
 
 class ROAttr(Attr):
   """
@@ -112,8 +109,7 @@ def check_api_version(resource_root, min_version):
   version.
   """
   if resource_root.version < min_version:
-    raise Exception("API version %s is required but %s is in use."
-        % (min_version, resource_root.version))
+    raise Exception("API version {} is required but {} is in use.".format(min_version, resource_root.version))
 
 
 def call(method, path, ret_type,
@@ -132,19 +128,18 @@ def call(method, path, ret_type,
   @param api_version: minimum API version for the call.
   """
   check_api_version(method.im_self, api_version)
-  if data is not None:
+  if not isinstance(data, type(None)):
     data = json.dumps(Attr(is_api_list=True).to_json(data, False))
     ret = method(path, data=data, params=params)
   else:
     ret = method(path, params=params)
-  if ret_type is None:
+  if isinstance(ret_type, type(None)):
     return
   elif ret_is_list:
     return ApiList.from_json_dict(ret, method.im_self, ret_type)
   elif isinstance(ret, list):
     return [ ret_type.from_json_dict(x, method.im_self) for x in ret ]
-  else:
-    return ret_type.from_json_dict(ret, method.im_self)
+  return ret_type.from_json_dict(ret, method.im_self)
 
 class BaseApiObject(object):
   """
@@ -232,12 +227,10 @@ class BaseApiObject(object):
 
   def _check_attr(self, name, allow_ro):
     if name not in self._get_attributes():
-      raise AttributeError('Invalid property %s for class %s.' %
-          (name, self.__class__.__name__))
+      raise AttributeError('Invalid property {} for class {}.'.format(name, self.__class__.__name__))
     attr = self._get_attributes()[name]
     if not allow_ro and attr and not attr.rw:
-      raise AttributeError('Attribute %s of class %s is read only.' %
-          (name, self.__class__.__name__))
+      raise AttributeError('Attribute {} of class {} is read only.'.format(name, self.__class__.__name__))
     return attr
 
   def _get_resource_root(self):
@@ -246,29 +239,27 @@ class BaseApiObject(object):
   def _update(self, api_obj):
     """Copy state from api_obj to this object."""
     if not isinstance(self, api_obj.__class__):
-      raise ValueError(
-          "Class %s does not derive from %s; cannot update attributes." %
-          (self.__class__, api_obj.__class__))
+      raise ValueError("Class {} does not derive from {}; cannot update attributes.".format(
+        self.__class__, api_obj.__class__))
 
     for name in self._get_attributes().keys():
       try:
         val = getattr(api_obj, name)
         setattr(self, name, val)
-      except AttributeError, ignored:
+      except AttributeError:
         pass
 
   def to_json_dict(self, preserve_ro=False):
-    dic = { }
+    dic = {}
     for name, attr in self._get_attributes().iteritems():
       if not preserve_ro and attr and not attr.rw:
         continue
       try:
         value = getattr(self, name)
-        if value is not None:
+        if not isinstnace(value, type(None)):
+          dic[name] = value
           if attr:
             dic[name] = attr.to_json(value, preserve_ro)
-          else:
-            dic[name] = value
       except AttributeError:
         pass
     return dic
@@ -280,7 +271,7 @@ class BaseApiObject(object):
     """
     name = self._get_attributes().keys()[0]
     value = getattr(self, name, None)
-    return "<%s>: %s = %s" % (self.__class__.__name__, name, value)
+    return "<{}>: {} = {}".format(self.__class__.__name__, name, value)
 
   @classmethod
   def from_json_dict(cls, dic, resource_root):
@@ -319,8 +310,7 @@ class BaseApiResource(BaseApiObject):
     actual_version = self._get_resource_root().version
     version = max(version, self._api_version())
     if actual_version < version:
-      raise Exception("API version %s is required but %s is in use."
-          % (version, actual_version))
+      raise Exception("API version {} is required but {} is in use.".format(version, actual_version))
 
   def _cmd(self, command, data=None, params=None, api_version=1):
     """
@@ -336,41 +326,30 @@ class BaseApiResource(BaseApiObject):
     """
     self._require_min_api_version(api_version)
     params = view and dict(view=view) or None
-    resp = self._get_resource_root().get(self._path() + '/' + rel_path,
-        params=params)
+    resp = self._get_resource_root().get("{}/{}".format(self._path(), rel_path), params=params)
     return json_to_config(resp, view == 'full')
 
   def _update_config(self, rel_path, config, api_version=1):
     self._require_min_api_version(api_version)
-    resp = self._get_resource_root().put(self._path() + '/' + rel_path,
-        data=config_to_json(config))
+    resp = self._get_resource_root().put("{}/{}".format(self._path(), rel_path), data=config_to_json(config))
     return json_to_config(resp, False)
 
-  def _delete(self, rel_path, ret_type, ret_is_list=False, params=None,
-      api_version=1):
-    return self._call('delete', rel_path, ret_type, ret_is_list, None, params,
-      api_version)
+  def _delete(self, rel_path, ret_type, ret_is_list=False, params=None, api_version=1):
+    return self._call('delete', rel_path, ret_type, ret_is_list, None, params, api_version)
 
-  def _get(self, rel_path, ret_type, ret_is_list=False, params=None,
-      api_version=1):
-    return self._call('get', rel_path, ret_type, ret_is_list, None, params,
-      api_version)
+  def _get(self, rel_path, ret_type, ret_is_list=False, params=None, api_version=1):
+    return self._call('get', rel_path, ret_type, ret_is_list, None, params, api_version)
 
-  def _post(self, rel_path, ret_type, ret_is_list=False, data=None, params=None,
-      api_version=1):
-    return self._call('post', rel_path, ret_type, ret_is_list, data, params,
-      api_version)
+  def _post(self, rel_path, ret_type, ret_is_list=False, data=None, params=None, api_version=1):
+    return self._call('post', rel_path, ret_type, ret_is_list, data, params, api_version)
 
-  def _put(self, rel_path, ret_type, ret_is_list=False, data=None, params=None,
-      api_version=1):
-    return self._call('put', rel_path, ret_type, ret_is_list, data, params,
-      api_version)
+  def _put(self, rel_path, ret_type, ret_is_list=False, data=None, params=None, api_version=1):
+    return self._call('put', rel_path, ret_type, ret_is_list, data, params, api_version)
 
-  def _call(self, method, rel_path, ret_type, ret_is_list=False, data=None,
-      params=None, api_version=1):
+  def _call(self, method, rel_path, ret_type, ret_is_list=False, data=None, params=None, api_version=1):
     path = self._path()
     if rel_path:
-      path += '/' + rel_path
+      path = "{}/{}".format(path, rel_path)
     return call(getattr(self._get_resource_root(), method),
         path,
         ret_type,
@@ -389,9 +368,7 @@ class ApiList(BaseApiObject):
     object.__setattr__(self, 'objects', objects)
 
   def __str__(self):
-    return "<ApiList>(%d): [%s]" % (
-        len(self.objects),
-        ", ".join([str(item) for item in self.objects]))
+    return "<ApiList>(%d): [{}]".format(len(self.objects), ", ".join([str(item) for item in self.objects]))
 
   def to_json_dict(self, preserve_ro=False):
     ret = BaseApiObject.to_json_dict(self, preserve_ro)
@@ -440,7 +417,7 @@ class ApiHostRef(BaseApiObject):
     BaseApiObject.init(self, resource_root, locals())
 
   def __str__(self):
-    return "<ApiHostRef>: %s" % (self.hostId)
+    return "<ApiHostRef>: {}".format(self.hostId)
 
 class ApiServiceRef(BaseApiObject):
   _ATTRIBUTES = {
@@ -506,11 +483,11 @@ class ApiCommand(BaseApiObject):
     return cls._ATTRIBUTES
 
   def __str__(self):
-    return "<ApiCommand>: '%s' (id: %s; active: %s; success: %s)" % (
+    return "<ApiCommand>: '{}' (id: {}; active: {}; success: {})".format(
         self.name, self.id, self.active, self.success)
 
   def _path(self):
-    return '/commands/%d' % self.id
+    return '/commands/{}'.format(self.id)
 
   def fetch(self):
     """
@@ -538,17 +515,16 @@ class ApiCommand(BaseApiObject):
 
     SLEEP_SEC = 5
 
-    if timeout is None:
+    deadline = time.time() + timeout
+    if isinstance(timeout, type(None)):
       deadline = None
-    else:
-      deadline = time.time() + timeout
 
     while True:
       cmd = self.fetch()
       if not cmd.active:
         return cmd
 
-      if deadline is not None:
+      if not isinstance(deadline, type(None)):
         now = time.time()
         if deadline < now:
           return cmd
@@ -597,7 +573,7 @@ class ApiCommandMetadata(BaseApiObject):
     BaseApiObject.init(self, resource_root)
 
   def __str__(self):
-    return "<ApiCommandMetadata>: %s (%s)" % (self.name, self.argSchema)
+    return "<ApiCommandMetadata>: {} ({})".format(self.name, self.argSchema)
 
 #
 # Metrics.
@@ -658,7 +634,7 @@ class ApiActivity(BaseApiObject):
     BaseApiObject.init(self, resource_root)
 
   def __str__(self):
-    return "<ApiActivity>: %s (%s)" % (self.name, self.status)
+    return "<ApiActivity>: {} ({})".format(self.name, self.status)
 
 #
 # Replication
@@ -675,7 +651,7 @@ class ApiCmPeer(BaseApiObject):
     }
 
   def __str__(self):
-    return "<ApiPeer>: %s (%s)" % (self.name, self.url)
+    return "<ApiPeer>: {} ({})".format(self.name, self.url)
 
 class ApiLicensedFeatureUsage(BaseApiObject):
   _ATTRIBUTES = {
@@ -750,7 +726,7 @@ class ApiHiveTable(BaseApiObject):
   }
 
   def __str__(self):
-    return "<ApiHiveTable>: %s, %s" % (self.database, self.tableName)
+    return "<ApiHiveTable>: {}, {}".format(self.database, self.tableName)
 
 class ApiImpalaUDF(BaseApiObject):
   _ATTRIBUTES = {
@@ -759,7 +735,7 @@ class ApiImpalaUDF(BaseApiObject):
   }
 
   def __str__(self):
-    return "<ApiImpalaUDF>: %s, %s" % (self.database, self.signature)
+    return "<ApiImpalaUDF>: {}, {}".format(self.database, self.signature)
 
 class ApiHiveUDF(BaseApiObject):
   _ATTRIBUTES = {
@@ -768,7 +744,7 @@ class ApiHiveUDF(BaseApiObject):
   }
 
   def __str__(self):
-    return "<ApiHiveUDF>: %s, %s" % (self.database, self.signature)
+    return "<ApiHiveUDF>: {}, {}".format(self.database, self.signature)
 
 class ApiHiveReplicationArguments(BaseApiObject):
   _ATTRIBUTES = {
@@ -1039,7 +1015,7 @@ class ApiConfig(BaseApiObject):
     BaseApiObject.init(self, resource_root, locals())
 
   def __str__(self):
-    return "<ApiConfig>: %s = %s" % (self.name, self.value)
+    return "<ApiConfig>: {} = {}".format(self.name, self.value)
 
 class ApiImpalaQuery(BaseApiObject):
   _ATTRIBUTES = {
@@ -1059,7 +1035,7 @@ class ApiImpalaQuery(BaseApiObject):
   }
 
   def __str__(self):
-    return "<ApiImpalaQuery>: %s" % (self.queryId)
+    return "<ApiImpalaQuery>: {}".format(self.queryId)
 
 #
 # WatchedDirectories data types
@@ -1072,7 +1048,7 @@ class ApiWatchedDir(BaseApiObject):
   }
 
   def __str__(self):
-    return "<ApiWatchedDir>: %s" % (self.path)
+    return "<ApiWatchedDir>: {}".format(self.path)
 
 class ApiWatchedDirList(ApiList):
 
@@ -1094,7 +1070,7 @@ class ApiImpalaQueryDetailsResponse(BaseApiObject):
   }
 
   def __str__(self):
-    return "<AipImpalaQueryDetailsResponse> %s" % self.details
+    return "<AipImpalaQueryDetailsResponse> {}".format(self.details)
 
 class ApiImpalaCancelResponse(BaseApiObject):
   _ATTRIBUTES = {
@@ -1102,7 +1078,7 @@ class ApiImpalaCancelResponse(BaseApiObject):
   }
 
   def __str__(self):
-    return "<ApiImpalaCancelResponse> %s" % self.warning
+    return "<ApiImpalaCancelResponse> {}".format(self.warning)
 
 class ApiImpalaQueryAttribute(BaseApiObject):
 
@@ -1115,7 +1091,7 @@ class ApiImpalaQueryAttribute(BaseApiObject):
   }
 
   def __str__(self):
-    return "<ApiImpalaQueryAttribute> %s" % name
+    return "<ApiImpalaQueryAttribute> {}".format(name)
 
 class ApiMr2AppInformation(BaseApiObject):
   _ATTRIBUTES = {
@@ -1123,7 +1099,7 @@ class ApiMr2AppInformation(BaseApiObject):
   }
 
   def __str__(self):
-    return "<ApiMr2AppInformation>: %s" % (self.jobState)
+    return "<ApiMr2AppInformation>: {}".format(self.jobState)
 
 class ApiYarnApplication(BaseApiObject):
   _ATTRIBUTES = {
@@ -1151,7 +1127,7 @@ class ApiYarnApplication(BaseApiObject):
   }
 
   def __str__(self):
-    return "<ApiYarnApplication>: %s" % (self.applicationId)
+    return "<ApiYarnApplication>: {}".format(self.applicationId)
 
 class ApiYarnApplicationResponse(BaseApiObject):
 
@@ -1166,7 +1142,7 @@ class ApiYarnKillResponse(BaseApiObject):
   }
 
   def __str__(self):
-    return "<ApiYarnKillResponse> %s" % self.warning
+    return "<ApiYarnKillResponse> {}".format(self.warning)
 
 class ApiYarnApplicationAttribute(BaseApiObject):
 
@@ -1179,7 +1155,7 @@ class ApiYarnApplicationAttribute(BaseApiObject):
   }
 
   def __str__(self):
-    return "<ApiYarnApplicationAttribute> %s" % name
+    return "<ApiYarnApplicationAttribute> {}".format(name)
 
 class ApiTimeSeriesRequest(BaseApiObject):
   _ATTRIBUTES = {
@@ -1192,7 +1168,7 @@ class ApiTimeSeriesRequest(BaseApiObject):
     }
 
   def __str__(self):
-    return "<ApiTimeSeriesRequest>: %s" % (self.query)
+    return "<ApiTimeSeriesRequest>: {}".format(self.query)
 
 class ApiProductVersion(BaseApiObject):
   _ATTRIBUTES = {
@@ -1321,8 +1297,7 @@ def json_to_config(dic, full = False):
   config = { }
   for entry in dic['items']:
     k = entry['name']
+    config[k] = entry.get('value')
     if full:
       config[k] = ApiConfig.from_json_dict(entry, None)
-    else:
-      config[k] = entry.get('value')
   return config

@@ -29,8 +29,7 @@ def query_events(resource_root, query_str=None):
   params = None
   if query_str:
     params = dict(query=query_str)
-  return call(resource_root.get, EVENTS_PATH, ApiEventQueryResult,
-      params=params)
+  return call(resource_root.get, EVENTS_PATH, ApiEventQueryResult, params=params)
 
 def get_event(resource_root, event_id):
   """
@@ -38,7 +37,7 @@ def get_event(resource_root, event_id):
   @param event_id: The event ID.
   @return: An ApiEvent.
   """
-  return call(resource_root.get, "%s/%s" % (EVENTS_PATH, event_id), ApiEvent)
+  return call(resource_root.get, "{}/{}".format(EVENTS_PATH, event_id), ApiEvent)
 
 
 class ApiEvent(BaseApiObject):

@@ -26,7 +26,7 @@ METRIC_ENTITY_TYPE_PATH = "/timeseries/entityTypes"
 METRIC_ENTITY_ATTR_PATH = "/timeseries/entityTypeAttributes"
 
 def query_timeseries(resource_root, query, from_time=None, to_time=None,
-    desired_rollup=None, must_use_desired_rollup=None, by_post=False):
+                     desired_rollup=None, must_use_desired_rollup=None, by_post=False):
   """
   Query for time series data from the CM time series data store.
   @param query: Query string.
@@ -56,8 +56,7 @@ def query_timeseries(resource_root, query, from_time=None, to_time=None,
   params = {}
   request_method = resource_root.get
   if by_post:
-    request = ApiTimeSeriesRequest(resource_root,
-                                   query=query)
+    request = ApiTimeSeriesRequest(resource_root, query=query)
     data = request
     request_method = resource_root.post
   elif query:
@@ -71,32 +70,28 @@ def query_timeseries(resource_root, query, from_time=None, to_time=None,
     params['desiredRollup'] = desired_rollup
   if must_use_desired_rollup:
     params['mustUseDesiredRollup'] = must_use_desired_rollup
-  return call(request_method, TIME_SERIES_PATH,
-      ApiTimeSeriesResponse, True, params=params, data=data)
+  return call(request_method, TIME_SERIES_PATH, ApiTimeSeriesResponse, True, params=params, data=data)
 
 def get_metric_schema(resource_root):
   """
   Get the schema for all of the metrics.
   @return: List of metric schema.
   """
-  return call(resource_root.get, METRIC_SCHEMA_PATH,
-      ApiMetricSchema, True)
+  return call(resource_root.get, METRIC_SCHEMA_PATH, ApiMetricSchema, True)
 
 def get_entity_types(resource_root):
   """
   Get the time series entity types that CM monitors.
   @return: List of time series entity type.
   """
-  return call(resource_root.get, METRIC_ENTITY_TYPE_PATH,
-      ApiTimeSeriesEntityType, True)
+  return call(resource_root.get, METRIC_ENTITY_TYPE_PATH, ApiTimeSeriesEntityType, True)
 
 def get_entity_attributes(resource_root):
   """
   Get the time series entity attributes that CM monitors.
   @return: List of time series entity attribute.
   """
-  return call(resource_root.get, METRIC_ENTITY_ATTR_PATH,
-      ApiTimeSeriesEntityAttribute, True)
+  return call(resource_root.get, METRIC_ENTITY_ATTR_PATH, ApiTimeSeriesEntityAttribute, True)
 
 class ApiTimeSeriesCrossEntityMetadata(BaseApiObject):
   _ATTRIBUTES = {

@@ -21,7 +21,7 @@ __docformat__ = "epytext"
 DASHBOARDS_PATH = "/timeseries/dashboards"
 
 def _get_dashboard_path(dashboard_name):
-  return DASHBOARDS_PATH + "/%s" % (dashboard_name)
+  return "{}/{}".format(DASHBOARDS_PATH, dashboard_name)
 
 def create_dashboards(resource_root, dashboard_list):
   """
@@ -30,8 +30,7 @@ def create_dashboards(resource_root, dashboard_list):
   @since: API v6
   @return: The list of dashboards created.
   """
-  return call(resource_root.post, DASHBOARDS_PATH, ApiDashboard, \
-      ret_is_list=True, data=dashboard_list)
+  return call(resource_root.post, DASHBOARDS_PATH, ApiDashboard, ret_is_list=True, data=dashboard_list)
 
 def get_dashboards(resource_root):
   """
@@ -39,8 +38,7 @@ def get_dashboards(resource_root):
   @since: API v6
   @return: A list of API dashboard objects.
   """
-  return call(resource_root.get, DASHBOARDS_PATH, ApiDashboard, \
-     ret_is_list=True)
+  return call(resource_root.get, DASHBOARDS_PATH, ApiDashboard, ret_is_list=True)
 
 def get_dashboard(resource_root, dashboard_name):
   """
@@ -49,8 +47,7 @@ def get_dashboard(resource_root, dashboard_name):
   @since: API v6
   @return: An API dasbhboard object.
   """
-  return call(resource_root.get, _get_dashboard_path(dashboard_name), \
-      ApiDashboard)
+  return call(resource_root.get, _get_dashboard_path(dashboard_name), ApiDashboard)
 
 def delete_dashboard(resource_root, dashboard_name):
   """
@@ -58,20 +55,19 @@ def delete_dashboard(resource_root, dashboard_name):
   @since: API v6
   @return: The deleted dashboard.
   """
-  return call(resource_root.delete, _get_dashboard_path(dashboard_name), \
-      ApiDashboard)
+  return call(resource_root.delete, _get_dashboard_path(dashboard_name), ApiDashboard)
 
 class ApiDashboard(BaseApiResource):
   _ATTRIBUTES = {
-    'name'  : None,
-    'json'  : None
+    'name': None,
+    'json': None
   }
 
   def __init__(self, resource_root, name=None, json=None):
     BaseApiObject.init(self, resource_root, locals())
 
   def __str__(self):
-    return "<ApiDashboard>: %s" % (self.name)
+    return "<ApiDashboard>: {}".format(self.name)
 
   def _path(self):
     return _get_dashboard_path(self.name)

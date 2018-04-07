@@ -24,8 +24,8 @@ from cm_api.endpoints.types import *
 __docformat__ = "epytext"
 
 EXTERNAL_ACCOUNT_PATH = "/externalAccounts/%s"
-EXTERNAL_ACCOUNT_FETCH_PATH = "/externalAccounts/%s/%s"
-EXTERNAL_ACCOUNT_CONFIG_FETCH_PATH = "/externalAccounts/account/%s"
+EXTERNAL_ACCOUNT_FETCH_PATH = "/externalAccounts/{}/{}"
+EXTERNAL_ACCOUNT_CONFIG_FETCH_PATH = "/externalAccounts/account/{}"
 
 def get_supported_categories(resource_root):
   """
@@ -33,8 +33,7 @@ def get_supported_categories(resource_root):
   @param resource_root: The root Resource object.
   @return: An ApiExternalAcccountCategory list
   """
-  return call(resource_root.get, EXTERNAL_ACCOUNT_PATH % ("supportedCategories",) ,
-      ApiExternalAccountCategory, True)
+  return call(resource_root.get, EXTERNAL_ACCOUNT_PATH.format("supportedCategories"), ApiExternalAccountCategory, True)
 
 def get_supported_types(resource_root, category_name):
   """
@@ -43,12 +42,10 @@ def get_supported_types(resource_root, category_name):
   @param category_name: The category name
   @return: An ApiExternalAcccountType list
   """
-  return call(resource_root.get,
-      EXTERNAL_ACCOUNT_FETCH_PATH % ("supportedTypes", category_name,),
-      ApiExternalAccountType, True)
+  return call(resource_root.get, EXTERNAL_ACCOUNT_FETCH_PATH.format("supportedTypes", category_name),
+              ApiExternalAccountType, True)
 
-def create_external_account(resource_root, name, display_name, type_name,
-                            account_configs=None):
+def create_external_account(resource_root, name, display_name, type_name, account_configs=None):
   """
   Create an external account
   @param resource_root: The root Resource object.
@@ -64,7 +61,7 @@ def create_external_account(resource_root, name, display_name, type_name,
                                typeName=type_name,
                                accountConfigs=account_configs)
   return call(resource_root.post,
-      EXTERNAL_ACCOUNT_PATH % ("create",),
+      EXTERNAL_ACCOUNT_PATH.format("create"),
       ApiExternalAccount, False, data=account)
 
 def get_external_account(resource_root, name, view=None):
@@ -76,11 +73,10 @@ def get_external_account(resource_root, name, view=None):
   @return: An ApiExternalAccount object
   """
   return call(resource_root.get,
-      EXTERNAL_ACCOUNT_FETCH_PATH % ("account", name,),
+      EXTERNAL_ACCOUNT_FETCH_PATH.format("account", name),
       ApiExternalAccount, False, params=view and dict(view=view) or None)
 
-def get_external_account_by_display_name(resource_root,
-                                         display_name, view=None):
+def get_external_account_by_display_name(resource_root, display_name, view=None):
   """
   Lookup an external account by display name
   @param resource_root: The root Resource object.
@@ -89,7 +85,7 @@ def get_external_account_by_display_name(resource_root,
   @return: An ApiExternalAccount object
   """
   return call(resource_root.get,
-      EXTERNAL_ACCOUNT_FETCH_PATH % ("accountByDisplayName", display_name,),
+      EXTERNAL_ACCOUNT_FETCH_PATH.format("accountByDisplayName", display_name),
       ApiExternalAccount, False, params=view and dict(view=view) or None)
 
 def get_all_external_accounts(resource_root, type_name, view=None):
@@ -101,7 +97,7 @@ def get_all_external_accounts(resource_root, type_name, view=None):
   @return: An ApiList of ApiExternalAccount objects matching the specified type
   """
   return call(resource_root.get,
-      EXTERNAL_ACCOUNT_FETCH_PATH % ("type", type_name,),
+      EXTERNAL_ACCOUNT_FETCH_PATH.format("type", type_name),
       ApiExternalAccount, True, params=view and dict(view=view) or None)
 
 def update_external_account(resource_root, account):
@@ -112,7 +108,7 @@ def update_external_account(resource_root, account):
   @return: An ApiExternalAccount object, representing the updated external account
   """
   return call(resource_root.put,
-      EXTERNAL_ACCOUNT_PATH % ("update",),
+      EXTERNAL_ACCOUNT_PATH.format("update"),
       ApiExternalAccount, False, data=account)
 
 def delete_external_account(resource_root, name):
@@ -123,7 +119,7 @@ def delete_external_account(resource_root, name):
   @return: The deleted ApiExternalAccount object
   """
   return call(resource_root.delete,
-      EXTERNAL_ACCOUNT_FETCH_PATH % ("delete", name,),
+      EXTERNAL_ACCOUNT_FETCH_PATH.format("delete", name),
       ApiExternalAccount, False)
 
 class ApiExternalAccountCategory(BaseApiObject):
@@ -134,8 +130,7 @@ class ApiExternalAccountCategory(BaseApiObject):
   }
 
   def __str__(self):
-    return "<ApiExternalAccountCategory>: %s" % (
-        self.name)
+    return "<ApiExternalAccountCategory>: {}".format(self.name)
 
 class ApiExternalAccountType(BaseApiObject):
   _ATTRIBUTES = {
@@ -148,8 +143,7 @@ class ApiExternalAccountType(BaseApiObject):
   }
 
   def __str__(self):
-    return "<ApiExternalAccountType>: %s (categoryName: %s)" % (
-        self.name, self.typeName)
+    return "<ApiExternalAccountType>: {} (categoryName: {})".format(self.name, self.typeName)
 
 class ApiExternalAccount(BaseApiResource):
   _ATTRIBUTES = {
@@ -161,16 +155,14 @@ class ApiExternalAccount(BaseApiResource):
     'accountConfigs'   : Attr(ApiConfig)
   }
 
-  def __init__(self, resource_root, name=None, displayName=None,
-               typeName=None, accountConfigs=None):
+  def __init__(self, resource_root, name=None, displayName=None, typeName=None, accountConfigs=None):
     BaseApiResource.init(self, resource_root, locals())
 
   def __str__(self):
-    return "<ApiExternalAccount>: %s (typeName: %s)" % (
-        self.name, self.typeName)
+    return "<ApiExternalAccount>: {} (typeName: {})".format(self.name, self.typeName)
 
   def _path(self):
-    return EXTERNAL_ACCOUNT_CONFIG_FETCH_PATH % self.name
+    return EXTERNAL_ACCOUNT_CONFIG_FETCH_PATH.format(self.name)
 
   def get_config(self, view=None):
     """

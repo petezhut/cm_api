@@ -42,7 +42,7 @@ def get_host(resource_root, host_id):
   @param host_id: Host id
   @return: An ApiHost object
   """
-  return call(resource_root.get, "%s/%s" % (HOSTS_PATH, host_id), ApiHost)
+  return call(resource_root.get, "{}/{}".format(HOSTS_PATH, host_id), ApiHost)
 
 def get_all_hosts(resource_root, view=None):
   """
@@ -60,7 +60,7 @@ def delete_host(resource_root, host_id):
   @param host_id: Host id
   @return: The deleted ApiHost object
   """
-  return call(resource_root.delete, "%s/%s" % (HOSTS_PATH, host_id), ApiHost)
+  return call(resource_root.delete, "{}/{}".format(HOSTS_PATH, host_id), ApiHost)
 
 
 class ApiHost(BaseApiResource):
@@ -85,15 +85,14 @@ class ApiHost(BaseApiResource):
     'clusterRef'        : ROAttr(ApiClusterRef),
   }
 
-  def __init__(self, resource_root, hostId=None, hostname=None,
-      ipAddress=None, rackId=None):
+  def __init__(self, resource_root, hostId=None, hostname=None, ipAddress=None, rackId=None):
     BaseApiObject.init(self, resource_root, locals())
 
   def __str__(self):
-    return "<ApiHost>: %s (%s)" % (self.hostId, self.ipAddress)
+    return "<ApiHost>: {} ({})".format(self.hostId, self.ipAddress)
 
   def _path(self):
-    return HOSTS_PATH + '/' + self.hostId
+    return "{}/{}".format(HOSTS_PATH, self.hostId)
 
   def _put_host(self):
     """
@@ -123,8 +122,7 @@ class ApiHost(BaseApiResource):
     """
     return self._update_config("config", config)
 
-  def get_metrics(self, from_time=None, to_time=None, metrics=None,
-      ifs=[], storageIds=[], view=None):
+  def get_metrics(self, from_time=None, to_time=None, metrics=None, ifs=[], storageIds=[], view=None):
     """
     This endpoint is not supported as of v6. Use the timeseries API
     instead. To get all metrics for a host with the timeseries API use
@@ -155,8 +153,7 @@ class ApiHost(BaseApiResource):
       params['storageIds'] = storageIds
     elif storageIds is None:
       params['queryStorage'] = 'false'
-    return self._get_resource_root().get_metrics(self._path() + '/metrics',
-        from_time, to_time, metrics, view, params)
+    return self._get_resource_root().get_metrics(self._path() + '/metrics', from_time, to_time, metrics, view, params)
 
   def enter_maintenance_mode(self):
     """

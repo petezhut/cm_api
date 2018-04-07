@@ -111,7 +111,7 @@ class ClouderaShell(cmd.Cmd):
 
         self.cluster_object = cluster
         if not EXECUTE:
-            print("Connected to %s" % (cluster.name))
+            print("Connected to {}".format(cluster.name))
         self.prompt = cluster.name + "> "
         return True
 
@@ -314,7 +314,7 @@ class ClouderaShell(cmd.Cmd):
             return None
 
         if self.service_action(service=service, action="start"):
-            print("%s is being started" % (service))
+            print("{} is being started".format(service))
         else:
             print("Error starting service")
             return None
@@ -332,7 +332,7 @@ class ClouderaShell(cmd.Cmd):
             return None
 
         if self.service_action(service=service, action="restart"):
-            print("%s is being restarted" % (service))
+            print("{} is being restarted".format(service))
         else:
             print("Error restarting service")
             return None
@@ -350,7 +350,7 @@ class ClouderaShell(cmd.Cmd):
             return None
 
         if self.service_action(service=service, action="stop"):
-            print("%s is being stopped" % (service))
+            print("{} is being stopped".format(service))
         else:
             print("Error stopping service")
             return None
@@ -575,7 +575,7 @@ class ClouderaShell(cmd.Cmd):
                 print("Error: Cluster not found")
                 return None
 
-        print("Version: %s" % (cluster.version))
+        print("Version: {}".format(cluster.version))
 
     def complete_version(self, text, line, start_index, end_index):
         return self.cluster_autocomplete(text, line, start_index, end_index)
@@ -617,7 +617,7 @@ def main():
             print("Unable to Authenticate")
             sys.exit(1)
     except URLError:
-        print("Error: Could not connect to %s" % (args.hostname))
+        print("Error: Could not connect to {}".format(args.hostname))
         sys.exit(1)
 
     CONFIG['cluster'] = args.cluster
@@ -640,6 +640,7 @@ def main():
     except KeyboardInterrupt:
         sys.stdout.write("\n")
         sys.exit(0)
+
 
 if __name__ == "__main__":
     main()

@@ -38,34 +38,35 @@ if platform == 'darwin':
 extras_require = dict(Socks=['PySocks >= 1.5.0'])
 setup_dir = os.path.split(__file__)[0]
 if setup_dir == '':
-  setup_dir = '.';
+    setup_dir = '.'
 base_dir = os.path.relpath(os.path.normpath(setup_dir), os.getcwd())
 src_dir = os.path.normpath(os.path.join(base_dir, 'src'))
 
 setup(
-  name = 'cm_api',
-  version = '16.0.0',    # Compatible with API v16 (CM 5.11)
-  packages = find_packages(src_dir, exclude=['cm_api_tests']),
-  package_dir = {'': src_dir },
-  zip_safe = True,
+    name='cm_api',
+    version='16.0.0',  # Compatible with API v16 (CM 5.11)
+    packages=find_packages(src_dir, exclude=['cm_api_tests']),
+    package_dir={'': src_dir},
+    zip_safe=True,
 
   # Project uses simplejson, so ensure that it gets installed or upgraded
   # on the target machine
-  install_requires = install_requires,
-  extras_require = extras_require,
+    install_requires=install_requires,
+    extras_require=extras_require,
 
-  author = 'Cloudera, Inc.',
-  author_email = 'scm-users@cloudera.org',
-  description = 'Cloudera Manager API client',
-  long_desc = 'cm_api is a Python client to the Cloudera Manager REST API',
-  license = 'Apache License 2.0',
-  url = 'http://cloudera.github.com/cm_api/',
-  classifiers = [
+    author='Cloudera, Inc.',
+    author_email='scm-users@cloudera.org',
+    description='Cloudera Manager API client',
+    long_desc='cm_api is a Python client to the Cloudera Manager REST API',
+    license='Apache License 2.0',
+    url='http://cloudera.github.com/cm_api/',
+    classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
         "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
   ],
-  entry_points = { 'console_scripts': [ 'cmps = cm_shell.cmps:main', ]}
+    entry_points={'console_scripts': ['cmps = cm_shell.cmps:main']}
 )
