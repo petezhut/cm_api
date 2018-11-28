@@ -1,9 +1,11 @@
 package services
 
-import "net/url"
+import (
+	"net/url"
+)
 
 // Service this is the General-use structure for the services endpoint
-type Service struct {
+type ServiceObject struct {
 	ServiceName      string
 	ServiceType      string
 	ServiceURL       *url.URL

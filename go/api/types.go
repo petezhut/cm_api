@@ -641,6 +641,7 @@ TYPE: EnableOozieHaArguments
 ApiEnableRmHaArguments Arguments used for enable RM HA command.
 */
 type EnableOozieHaArguments struct {
+	message string
 }
 
 /*
@@ -648,6 +649,10 @@ TYPE: EnableSentryHaArgs
 Arguments used for enable Sentry HA command.
 */
 type EnableSentryHaArgs struct {
+	NewSentryHostId   string                           `json:"newSentryHostId"`   //	Id of host on which new Sentry Server role will be added.
+	NewSentryRoleName string                           `json:"newSentryRoleName"` //	Name of the new Sentry Server role to be created. This is an optional argument.
+	ZkServiceName     string                           `json:"zkServiceName"`     //	Name of the ZooKeeper service that will be used for Sentry HA. This is an optional parameter if the Sentry to ZooKeeper dependency is already set in CM.
+	RrcArgs           *SimpleRollingRestartClusterArgs `json:"rrcArgs"`           //
 }
 
 /*
@@ -655,6 +660,7 @@ TYPE: EntityStatus
 The single value used by the Cloudera Manager UI to represent the status of the entity. It is computed from a variety of other entity-specific states, not all values apply to all entities. For example, STARTING/STOPPING do not apply to a host.
 */
 type EntityStatus struct {
+	// ENUM
 }
 
 /*
@@ -662,6 +668,7 @@ TYPE: EntityType
 Represents the types of entities.
 */
 type EntityType struct {
+	//
 }
 
 /*
@@ -669,14 +676,24 @@ TYPE: Event
 Events model noteworthy incidents in Cloudera Manager or the managed Hadoop cluster. An event carries its event category, severity, and a string content. They also have generic attributes, which are free-form key value pairs. Important events may be promoted into alerts.
 */
 type Event struct {
+	Id           string            `json:"id"`           //	A unique ID for this event.
+	Content      string            `json:"content"`      //	The content payload of this event.
+	TimeOccurred string            `json:"timeOccurred"` //	When the event was generated.
+	TimeReceived string            `json:"timeReceived"` //	When the event was stored by Cloudera Manager. Events do not arrive in the order that they are generated. If you are writing an event poller, this is a useful field to query.
+	Category     string            `json:"category"`     //	The category of this event -- whether it is a health event, an audit event, an activity event, etc.
+	Severity     *EventSeverity    `json:"severity"`     //	The severity of the event.
+	Alert        bool              `json:"alert"`        //	Whether the event is promoted to an alert according to configuration.
+	Attributes   []*EventAttribute `json:"attributes"`   //	A list of key-value attribute pairs.
 }
 
 /*
 TYPE: EventAttribute
 
-ApiEventCategory
+EventCategory
 */
 type EventAttribute struct {
+	Name   string    `json:"name"`   //
+	Values []*string `json:"values"` //string	array of string
 }
 
 /*
@@ -684,14 +701,17 @@ TYPE: EventQueryResult
 A generic list.
 */
 type EventQueryResult struct {
+	TotalResults int32    `json:"totalResults"` //	The total number of matched results. Some are possibly not shown due to pagination.
+	Items        []*Event `json:"items"`        // //
 }
 
 /*
 TYPE: EventSeverity
 
-ApiExternalAccount Represents an instantiation of an external account type, referencing a supported external account type, via the typeName field, along with suitable configuration to access an external resource of the provided type. The typeName field must match the name of an external account type.
+ExternalAccount Represents an instantiation of an external account type, referencing a supported external account type, via the typeName field, along with suitable configuration to access an external resource of the provided type. The typeName field must match the name of an external account type.
 */
 type EventSeverity struct {
+	// ENUM
 }
 
 /*
@@ -699,6 +719,12 @@ TYPE: ExternalAccountCategory
 Type representing an external account category.
 */
 type ExternalAccountCategory struct {
+	Name             string      `json:"name"`             //	Represents the intial name of the account; used to uniquely identify this account.
+	DisplayName      string      `json:"displayName"`      //	Represents a modifiable label to identify this account for user-visible purposes.
+	CreatedTime      string      `json:"createdTime"`      //	Represents the time of creation for this account.
+	LastModifiedTime string      `json:"lastModifiedTime"` //	Represents the last modification time for this account.
+	TypeName         string      `json:"typeName"`         //	Represents the Type ID of a supported external account type. The type represented by this field dictates which configuration options must be defined for this account.
+	AccountConfigs   *ConfigList `json:"accountConfigs"`   //	Represents the account configuration for this account. When an account is retrieved from the server, the configs returned must match allowed configuration for the type of this account. When specified for creation of a new account or for the update of an existing account, this field must include every required configuration parameter specified in the type's definition, with the account configuration's value field specified to represent the specific configuration desired for this account.
 }
 
 /*
@@ -706,6 +732,9 @@ TYPE: ExternalAccountCategoryList
 Represents a list of external account categories.
 */
 type ExternalAccountCategoryList struct {
+	Name        string `json:"name"`        //	Represents an identifier for a category.
+	DisplayName string `json:"displayName"` //	Represents a localized display name for a category.
+	Description string `json:"description"` //	Represents a localized description for a category.
 }
 
 /*
@@ -713,13 +742,21 @@ TYPE: ExternalAccountList
 Represents a list of external accounts.
 */
 type ExternalAccountList struct {
+	Items []*ExternalAccount `json:"items"` //
 }
 
+type ExternalAccount struct {}
 /*
 TYPE: ExternalAccountType
 A supported external account type. An external account type represents an external authentication source that is used by Cloudera Manager in its APIs to take suitable actions that require authentication to an external service. An external account type is uniquely identified by a server-generated ID and identifies with a category identifier: e.g. The "AWS" category has an account type "AWS_Access_Key_Authorization"
 */
 type ExternalAccountType struct {
+	Name                  string      `json:"name"`                  //	Represents the immutable name for this account.
+	CategoryName          string      `json:"categoryName"`          //	Represents the category of this account.
+	Type                  string      `json:"type"`                  //	Represents the type for this account.
+	DisplayName           string      `json:"displayName"`           //	Represents the localized display name for this account.
+	Description           string      `json:"description"`           //	Represents the localized description for this account type.
+	AllowedAccountConfigs *ConfigList `json:"allowedAccountConfigs"` //	Represents the list of allowed account configs.
 }
 
 /*
@@ -727,6 +764,7 @@ TYPE: ExternalAccountTypeList
 Represents a list of external account types.
 */
 type ExternalAccountTypeList struct {
+	Items []*ExternalAccountType `json:"items"` //
 }
 
 /*

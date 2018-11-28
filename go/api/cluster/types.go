@@ -14,14 +14,29 @@ type Host struct {
 }
 
 type ClusterUrls struct {
-	APIURL               *url.URL
-	ClusterURL           *url.URL
-	ClusterHostsURL      *url.URL
-	ClusterVersionURL    *url.URL
-	ClusterApiVersionURL *url.URL
+	APIURL                  *url.URL
+	ClusterURL              *url.URL
+	ClusterHostsURL         *url.URL
+	ClusterVersionURL       *url.URL
+	ClusterApiVersionURL    *url.URL
 }
 
-type Cluster struct {
+type Cluster interface {
+	GetURL() *url.URL
+	GetAPIVersion() string
+	GetVersion() string
+	GetHosts() []*Host
+	Restart()
+	Stop()
+	Start()
+}
+
+//func (this *Cluster) GetURL() *url.URL {
+//
+//}
+
+type ClusterObj struct {
+	Cluster
 	ClusterName string
 	Admin       *auth.Auth
 	Manager     *manager.Manager

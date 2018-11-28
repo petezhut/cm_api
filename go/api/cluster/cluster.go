@@ -3,69 +3,107 @@ package cluster
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
-
-	"github.com/petezhut/cm_api/go/logging"
 	"github.com/petezhut/cm_api/go/api"
 	"github.com/petezhut/cm_api/go/api/auth"
 	"github.com/petezhut/cm_api/go/api/manager"
-	"github.com/petezhut/cm_api/go/api/urls"
+	"github.com/petezhut/cm_api/go/logging"
+	"net/url"
 )
 
+func (cl *ClusterObj) GetClusterVersionURL() *url.URL {
+	if cl.URLS.ClusterVersionURL.String() == "" {
+		logging.DEBUG("Setting ClusterVersionURL")
+		realVersionURL, _ := url.Parse(fmt.Sprintf(ClusterURL, cl.Manager.Hostname, cl.Manager.Port, cl.APIVersion))
+		logging.DEBUG(fmt.Sprintf("Found: %s", realVersionURL))
+		cl.URLS.ClusterVersionURL = realVersionURL
+		cl.URLS.ClusterURL = realVersionURL
+	}
+	logging.DEBUG("Returning ClusterVersionURL")
+	return cl.URLS.ClusterVersionURL
+
+}
+
 // NewClusterURLs - This creates a container object of cluster-related URLs
-func (thisCluster *Cluster) NewClusterURLs() *ClusterUrls{
+func NewClusterObjURLs() *ClusterUrls {
 	urls := new(ClusterUrls)
 	emptyUrl, _ := url.Parse("")
 	urls.APIURL = emptyUrl
 	urls.ClusterURL = emptyUrl
 	urls.ClusterHostsURL = emptyUrl
-	urls.ClusterVersionURL = thisCluster.getClusterVersionURL()
+	urls.ClusterVersionURL = emptyUrl
 	urls.ClusterApiVersionURL = emptyUrl
 	return urls
-
 }
 
-// NewCluster - This is to create a new Cluster Object
-func NewCluster() *Cluster {
-	newCluster := new(Cluster)
-	newCluster.Admin = auth.NewAuth()
-	newCluster.Manager = manager.NewManager()
-	newCluster.URLS = NewClusterURLs()
-	return newCluster
+// EmptyURL - This is to create a new ClusterObj Object
+func New(CmHost string) *ClusterObj {
+// func NewClusterObj(CmHost string) *ClusterObj {
+	newClusterObj := new(ClusterObj)
+	newClusterObj.Admin = auth.NewAuth()
+	newClusterObj.Manager = manager.NewManager(CmHost)
+	newClusterObj.URLS = NewClusterObjURLs()
+	newClusterObj.Update()
+	return newClusterObj
 }
 
-// This produces the string representation of the ClusterURL object
-func (clusterURLs *ClusterUrls) String() string {
-	return fmt.Sprintf("URLS(APIURL: %s, ClusterURL: %s, ClusterHostsURL: %s, ClusterVersionURL: %s, ClusterAPIVersionURL: %s)",
-		clusterURLs.APIURL, clusterURLs.ClusterURL, clusterURLs.ClusterHostsURL, clusterURLs.ClusterVersionURL, clusterURLs.ClusterApiVersionURL)
+// This produces the string representation of the ClusterUrls object
+func (cu *ClusterUrls) String() string {
+	return fmt.Sprintf("ClusterURLs(APIURL: %s, ClusterURL: %s, ClusterHostsURL: %s, ClusterVersionURL: %s, ClusterApiVersionURL: %s)",
+	cu.APIURL, cu.ClusterURL, cu.ClusterHostsURL, cu.ClusterVersionURL, cu.ClusterApiVersionURL)
 }
 
-// This produces the string representation of the Cluster object
-func (thisCluster *Cluster) String() string {
+// This produces the string representation of the ClusterObj object
+func (cl *ClusterObj) String() string {
 	return fmt.Sprintf("Cluster(ClusterName: %s, Admin: %s, Manager: %s, APIVersion: %s, Version: %s, URLS: %s)",
-		thisCluster.ClusterName, thisCluster.Admin, thisCluster.Manager, thisCluster.APIVersion, thisCluster.Version, thisCluster.URLS)
+		cl.ClusterName, cl.Admin, cl.Manager, cl.APIVersion, cl.Version, cl.URLS)
 }
 
-// Update the Cluster object to have some core information
-func (thisCluster *Cluster) Update() {
+// Update the ClusterObj object to have some core information
+func (cl *ClusterObj) Update() {
 	logging.DEBUG("Starting Update")
-	thisCluster.setAPIVersion()
+	cl.setAPIVersion()
 	logging.DEBUG("Finished Setting APIVersion")
 	var clusterList api.ClusterList
-	json.Unmarshal(api.Get(thisCluster.Admin, thisCluster.URLS.ClusterVersionURL), &clusterList)
-	thisCluster.Version = clusterList.Items[0].FullVersion
-	thisCluster.ClusterName = clusterList.Items[0].Name
+	_ = json.Unmarshal(api.Get(cl.Admin, cl.GetClusterVersionURL()), &clusterList)
+	logging.DEBUG(fmt.Sprintf("%s", clusterList))
+	cl.Version = clusterList.Items[0].FullVersion
+	cl.ClusterName = clusterList.Items[0].Name
 }
 
-// setAPIVersion - an internal method to query the API version in use on the clutser
-func (thisCluster *Cluster) setAPIVersion() {
+func (cl *ClusterObj) GetClusterAPIVersionURL() *url.URL {
+	if cl.URLS.ClusterVersionURL.String() == "" {
+		logging.DEBUG("Setting ClusterApiVersionURL")
+		cl.URLS.ClusterApiVersionURL = cl.GetClusterVersionURL()
+	}
+	logging.DEBUG("Returning ClusterApiVersionURL")
+	return cl.URLS.ClusterApiVersionURL
+}
+
+// setAPIVersion - an internal method to query the API version in use on the cluster
+func (cl *ClusterObj) setAPIVersion() {
 	logging.DEBUG("Staring APIVersion")
-	logging.DEBUG(fmt.Sprintf("ClusterAPIVersionURL = %s", thisCluster.URLS.ClusterApiVersionURL))
-	logging.DEBUG(fmt.Sprintf("ClusterAPIVersionURL = %s", thisCluster.ge
-	thisCluster.APIVersion = string(api.Get(thisCluster.Admin, thisCluster.URLS.ClusterApiVersionURL))
+	cl.APIVersion = "v19"
+	logging.DEBUG(fmt.Sprintf("ClusterAPIVersionURL = %s", cl.GetClusterAPIVersionURL()))
+	// cl.APIVersion = string(api.Get(cl.Admin, cl.GetClusterAPIVersionURL()))
 }
 
-// GetClusterHosts - Collect the list of hostnames in the cluster
-func (thisCluster *Cluster) GetClusterHosts() string {
-	return string(api.Get(thisCluster.Admin, thisCluster.URLS.ClusterHostsURL))
+func (cl *ClusterObj) GetAPIVersion() string {
+	return cl.APIVersion
+}
+
+func (cl *ClusterObj) getClusterHostsURL() *url.URL {
+	if cl.URLS.ClusterHostsURL.String() == "" {
+		logging.DEBUG("Setting ClusterHostsURL")
+		clusterHostURL, _ := url.Parse(fmt.Sprintf("%s/%s/hosts", cl.URLS.ClusterURL, cl.ClusterName))
+		logging.DEBUG(fmt.Sprintf("ClusterHostURL = %s", clusterHostURL))
+		cl.URLS.ClusterHostsURL = clusterHostURL
+	}
+	logging.DEBUG("Returning ClusterHostsURL")
+	return cl.URLS.ClusterHostsURL
+}
+
+func (cl *ClusterObj) GetHosts() *api.HostRefList {
+	var clusterHosts *api.HostRefList // []*api.Host
+	_ = json.Unmarshal(api.Get(cl.Admin, cl.getClusterHostsURL()), &clusterHosts)
+	return clusterHosts
 }

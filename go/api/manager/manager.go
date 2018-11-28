@@ -6,9 +6,9 @@ import (
 	"github.com/petezhut/cm_api/go/api"
 )
 
-func NewManager() *Manager {
+func NewManager(hostname string) *Manager {
 	return &Manager{
-		Hostname: "gojira-jmcfarland-1.gce.cloudera.com",
+		Hostname: hostname,
 		Port: api.DefaultAPIPort}
 }
 

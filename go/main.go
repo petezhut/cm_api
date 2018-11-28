@@ -1,5 +1,7 @@
 package main
 
+// TODO: Get the URL generation sorted.  This is ridiculous.
+
 import (
 	"fmt"
 
@@ -8,11 +10,9 @@ import (
 )
 
 func main() {
-	logging.DEBUG("1")
-	C := cluster.NewCluster()
-	logging.DEBUG("2")
-	C.Update()
-	logging.DEBUG("3")
+	C := cluster.New("avatar-jmcfarland-1.gce.cloudera.com")
+	//C.Update()
 	logging.INFO(fmt.Sprintf("%s", C))
-	logging.DEBUG(C.GetClusterHosts())
+	logging.INFO(fmt.Sprintf("%s", C.GetAPIVersion()))
+	logging.DEBUG(fmt.Sprintf("%s", C.GetHosts()))
 }
